@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ChevronDown, Menu, User, Package, ShoppingCart, RotateCcw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -49,6 +50,14 @@ const quickLinks = [
 ];
 
 export default function Header() {
+  const { t, i18n } = useTranslation();
+  const labelKeyMap: Record<string, string> = {
+    'Shipping': 'shipping',
+    'Tracking': 'tracking',
+    'Design & Print': 'design_print',
+    'Locations': 'locations',
+    'Support': 'support',
+  };
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -114,15 +123,15 @@ export default function Header() {
                   onMouseEnter={() => setActiveDropdown(item.label)}
                   onMouseLeave={() => setActiveDropdown(null)}
                 >
-                  <Link
-                    to={item.href}
-                    className="flex items-center px-4 py-2 text-white text-sm font-medium hover:bg-white/10 rounded transition-colors duration-200"
-                  >
-                    {item.label}
-                    {item.hasDropdown && (
-                      <ChevronDown className="ml-1 h-4 w-4" />
-                    )}
-                  </Link>
+                      <Link
+                        to={item.href}
+                        className="flex items-center px-4 py-2 text-white text-sm font-medium hover:bg-white/10 rounded transition-colors duration-200"
+                      >
+                        {t(`nav.${labelKeyMap[item.label]}`) || item.label}
+                        {item.hasDropdown && (
+                          <ChevronDown className="ml-1 h-4 w-4" />
+                        )}
+                      </Link>
 
                   {/* Dropdown */}
                   <AnimatePresence>
@@ -154,6 +163,20 @@ export default function Header() {
 
             {/* Right side actions */}
             <div className="flex items-center space-x-4">
+              <div className="hidden sm:block">
+                <select
+                  aria-label="Language selector"
+                  onChange={(e) => i18n.changeLanguage(e.target.value)}
+                  defaultValue={i18n.language || 'en'}
+                  className="mr-4 rounded-md px-2 py-1 text-sm"
+                >
+                  <option value="en">EN</option>
+                  <option value="es">ES</option>
+                  <option value="fr">FR</option>
+                  <option value="de">DE</option>
+                  <option value="zh">中文</option>
+                </select>
+              </div>
               {/* Dashboard quick link */}
               <Link
                 to="/dashboard"

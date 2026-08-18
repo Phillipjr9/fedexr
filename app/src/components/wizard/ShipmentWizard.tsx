@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { getCountryList } from '@/lib/countries';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin,
@@ -23,6 +25,7 @@ const initialFormData = {
     street: '',
     city: '',
     state: '',
+    country: '',
     zip: '',
     phone: '',
   },
@@ -32,6 +35,7 @@ const initialFormData = {
     street: '',
     city: '',
     state: '',
+    country: '',
     zip: '',
     phone: '',
   },
@@ -67,6 +71,8 @@ export default function ShipmentWizard() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t, i18n } = useTranslation();
+  const countries = getCountryList(i18n.language || 'en');
 
   const handleInputChange = (section: keyof typeof initialFormData, field: string, value: any) => {
     setFormData(prev => {
@@ -192,6 +198,15 @@ export default function ShipmentWizard() {
                     <Input value={formData.fromAddress.zip} onChange={(e) => handleInputChange('fromAddress', 'zip', e.target.value)} placeholder="ZIP code" />
                   </div>
                 </div>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                  <select value={formData.fromAddress.country} onChange={(e) => handleInputChange('fromAddress', 'country', e.target.value)} className="w-full border rounded-md px-3 py-2">
+                    <option value="">Select country</option>
+                    {countries.map(c => (
+                      <option key={c.code} value={c.code}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                   <Input value={formData.fromAddress.phone} onChange={(e) => handleInputChange('fromAddress', 'phone', e.target.value)} placeholder="(555) 123-4567" />
@@ -230,6 +245,15 @@ export default function ShipmentWizard() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">ZIP *</label>
                     <Input value={formData.toAddress.zip} onChange={(e) => handleInputChange('toAddress', 'zip', e.target.value)} placeholder="ZIP code" />
                   </div>
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                  <select value={formData.toAddress.country} onChange={(e) => handleInputChange('toAddress', 'country', e.target.value)} className="w-full border rounded-md px-3 py-2">
+                    <option value="">Select country</option>
+                    {countries.map(c => (
+                      <option key={c.code} value={c.code}>{c.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>

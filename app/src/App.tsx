@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import './i18n';
 import { Toaster } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import LiveChat from '@/components/chat/LiveChat';
@@ -20,10 +22,11 @@ import './App.css';
 
 // Create Shipment Page wrapper
 function CreateShipmentPage() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-fedex-gray py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-semibold text-gray-900 mb-8 text-center">Create a Shipment</h1>
+        <h1 className="text-3xl font-semibold text-gray-900 mb-8 text-center">{t('shipment.title')}</h1>
         <ShipmentWizard />
       </div>
     </div>

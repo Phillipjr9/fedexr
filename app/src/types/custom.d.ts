@@ -2,11 +2,13 @@ declare module 'i18n-iso-countries';
 declare module '*.json';
 
 declare module 'react-i18next' {
-  import * as React from 'react';
-  export function useTranslation(ns?: string | string[]): { t: (k: string, opts?: any) => string; i18n: any };
-  export const I18nextProvider: React.ComponentType<any>;
-  export const Trans: React.ComponentType<any>;
+  export function useTranslation(ns?: string | string[]): any;
+  export const I18nextProvider: any;
+  export const Trans: any;
   export const initReactI18next: any;
+  export function withTranslation(...args: any[]): any;
+  const _default: any;
+  export default _default;
 }
 
 declare module 'i18next' {

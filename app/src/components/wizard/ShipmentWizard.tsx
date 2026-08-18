@@ -319,6 +319,16 @@ export default function ShipmentWizard() {
                       <p className="text-gray-600">Click to upload or drag and drop</p>
                       <p className="text-sm text-gray-400">PNG, JPG up to 10MB</p>
                     </label>
+                    <div className="mt-4 flex items-center justify-center gap-4">
+                      <label htmlFor="image-upload" className="inline-flex items-center px-4 py-2 bg-fedex-purple text-white rounded-md cursor-pointer hover:opacity-90">
+                        Choose image
+                      </label>
+                      {formData.packageDetails.image ? (
+                        <span className="text-sm text-gray-700">{formData.packageDetails.image.name}</span>
+                      ) : (
+                        <span className="text-sm text-gray-500">No file selected</span>
+                      )}
+                    </div>
                   </div>
                   {formData.packageDetails.image && (
                     <div className="mt-4">

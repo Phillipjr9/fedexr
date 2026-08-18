@@ -39,10 +39,13 @@ CREATE TABLE IF NOT EXISTS shipment_events (
 
 -- Tracking images (image stored as bytea). For production, prefer object storage and store URLs.
 CREATE TABLE IF NOT EXISTS tracking_images (
-  tracking_number TEXT PRIMARY KEY,
+  id BIGSERIAL PRIMARY KEY,
+  tracking_number TEXT NOT NULL,
+  event_type TEXT NOT NULL DEFAULT 'default', -- e.g. 'in_transit', 'delivered'
   mime TEXT,
   image BYTEA,
-  created_at TIMESTAMPTZ DEFAULT now()
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (tracking_number, event_type)
 );
 
 -- Optional: index for faster lookup by created_at

@@ -59,6 +59,7 @@ export default function TrackingPage() {
   const [adminSecret, setAdminSecret] = useState('');
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [eventType, setEventType] = useState<'in_transit' | 'delivered' | 'other'>('in_transit');
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,6 +199,11 @@ export default function TrackingPage() {
                       <p className="text-white/60 text-sm mb-1">Admin upload</p>
                       <div className="flex items-center gap-2">
                         <input id="tracking-image-upload" type="file" accept="image/*" className="rounded-md" />
+                        <select value={eventType} onChange={(e) => setEventType(e.target.value as any)} className="rounded-md px-2 py-2 border">
+                          <option value="in_transit">In Transit</option>
+                          <option value="delivered">Delivered (Proof of Delivery)</option>
+                          <option value="other">Other</option>
+                        </select>
                         <Input placeholder="Admin secret" value={adminSecret} onChange={(e) => setAdminSecret(e.target.value)} />
                         <Button
                           onClick={async () => {
@@ -216,7 +222,7 @@ export default function TrackingPage() {
                                     'Content-Type': 'application/json',
                                     'x-admin-secret': adminSecret,
                                   },
-                                  body: JSON.stringify({ trackingNumber: trackingResult.number, dataUrl }),
+                                  body: JSON.stringify({ trackingNumber: trackingResult.number, dataUrl, eventType }),
                                 });
                                 const json = await resp.json();
                                 if (!resp.ok) { toast.error(json?.error || 'Upload failed'); return; }

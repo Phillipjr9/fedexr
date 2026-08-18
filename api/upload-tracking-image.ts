@@ -11,7 +11,7 @@ export default async function handler(req: any, res: any) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { trackingNumber, dataUrl } = req.body || {};
+  const { trackingNumber, dataUrl, eventType } = req.body || {};
   if (!trackingNumber || !dataUrl) return res.status(400).json({ error: 'Missing parameters' });
 
   // dataUrl should be like data:image/png;base64,AAA...
@@ -38,11 +38,11 @@ export default async function handler(req: any, res: any) {
       )
     `);
 
-    // upsert
+    // upsert per event_type
     await client.query(
-      `INSERT INTO tracking_images (tracking_number, mime, image) VALUES ($1, $2, $3)
-       ON CONFLICT (tracking_number) DO UPDATE SET mime = EXCLUDED.mime, image = EXCLUDED.image, created_at = now()`,
-      [trackingNumber, mime, buffer]
+      `INSERT INTO tracking_images (tracking_number, event_type, mime, image) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (tracking_number, event_type) DO UPDATE SET mime = EXCLUDED.mime, image = EXCLUDED.image, created_at = now()`,
+      [trackingNumber, eventType || 'default', mime, buffer]
     );
 
     return res.status(200).json({ ok: true });

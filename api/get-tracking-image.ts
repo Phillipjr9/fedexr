@@ -13,7 +13,9 @@ export default async function handler(req: any, res: any) {
   const client = new Client({ connectionString });
   try {
     await client.connect();
-    const r = await client.query('SELECT mime, image FROM tracking_images WHERE tracking_number = $1', [trackingNumber]);
+    // Optional query param `event` to fetch specific event image (e.g. event=delivered)
+    const event = req.query.event || 'default';
+    const r = await client.query('SELECT mime, image FROM tracking_images WHERE tracking_number = $1 AND event_type = $2', [trackingNumber, event]);
     if (r.rowCount === 0) return res.status(404).json({ found: false });
     const row = r.rows[0];
     const mime = row.mime;

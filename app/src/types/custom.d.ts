@@ -6,6 +6,7 @@ declare module 'react-i18next' {
   export function useTranslation(ns?: string | string[]): { t: (k: string, opts?: any) => string; i18n: any };
   export const I18nextProvider: React.ComponentType<any>;
   export const Trans: React.ComponentType<any>;
+  export const initReactI18next: any;
 }
 
 declare module 'i18next' {

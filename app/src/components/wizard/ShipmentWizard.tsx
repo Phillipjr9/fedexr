@@ -71,7 +71,7 @@ export default function ShipmentWizard() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const countries = getCountryList(i18n.language || 'en');
 
   const handleInputChange = (section: keyof typeof initialFormData, field: string, value: any) => {

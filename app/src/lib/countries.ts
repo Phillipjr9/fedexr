@@ -11,8 +11,8 @@ countries.registerLocale(frLocale);
 countries.registerLocale(deLocale);
 countries.registerLocale(zhLocale);
 
-export function getCountryList(lang = 'en') {
-  const names = countries.getNames(lang) || countries.getNames('en');
+export function getCountryList(lang = 'en'): { code: string; name: string }[] {
+  const names = (countries.getNames(lang) || countries.getNames('en')) as Record<string, string>;
   const list = Object.entries(names).map(([code, name]) => ({ code, name }));
 
   // Add Kosovo if missing (not in all ISO lists)

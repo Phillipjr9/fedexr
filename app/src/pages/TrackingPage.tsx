@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, MapPin, Clock, CheckCircle, Barcode, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 import FadeInOnScroll from '@/components/animations/FadeInOnScroll';
 
 interface TrackingEvent {
@@ -55,6 +56,9 @@ export default function TrackingPage() {
     history: TrackingEvent[];
   } | null>(null);
   const [trackingImage, setTrackingImage] = useState<string | null>(null);
+  const [adminSecret, setAdminSecret] = useState('');
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,6 +193,54 @@ export default function TrackingPage() {
                         <img src={trackingImage} alt="Image of goods" className="h-20 rounded-md object-cover border border-white/20" />
                       </div>
                     )}
+                    {/* Admin upload control: allow admins to attach/update tracking images */}
+                    <div className="ml-6">
+                      <p className="text-white/60 text-sm mb-1">Admin upload</p>
+                      <div className="flex items-center gap-2">
+                        <input id="tracking-image-upload" type="file" accept="image/*" className="rounded-md" />
+                        <Input placeholder="Admin secret" value={adminSecret} onChange={(e) => setAdminSecret(e.target.value)} />
+                        <Button
+                          onClick={async () => {
+                            const input = document.getElementById('tracking-image-upload') as HTMLInputElement | null;
+                            const file = input?.files?.[0];
+                            if (!file) { toast.error('Select an image file'); return; }
+                            if (!adminSecret.trim()) { toast.error('Enter admin secret'); return; }
+                            setUploading(true);
+                            const reader = new FileReader();
+                            reader.onload = async () => {
+                              const dataUrl = reader.result as string;
+                              try {
+                                const resp = await fetch('/api/upload-tracking-image', {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'x-admin-secret': adminSecret,
+                                  },
+                                  body: JSON.stringify({ trackingNumber: trackingResult.number, dataUrl }),
+                                });
+                                const json = await resp.json();
+                                if (!resp.ok) { toast.error(json?.error || 'Upload failed'); return; }
+                                setFilePreview(dataUrl);
+                                setTrackingImage(dataUrl);
+                                toast.success('Image uploaded and attached to tracking number');
+                                if (input) input.value = '';
+                              } catch (err) {
+                                console.error(err);
+                                toast.error('Upload error');
+                              } finally {
+                                setUploading(false);
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                          disabled={uploading}
+                          className="bg-fedex-orange text-white"
+                        >
+                          {uploading ? 'Uploading…' : 'Attach'}
+                        </Button>
+                      </div>
+                      {filePreview && <img src={filePreview} alt="preview" className="h-12 rounded-md mt-2" />}
+                    </div>
                   </div>
               </div>
 

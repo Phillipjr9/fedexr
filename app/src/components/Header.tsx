@@ -163,20 +163,23 @@ export default function Header() {
 
             {/* Right side actions */}
             <div className="flex items-center space-x-4">
-              <div className="hidden sm:block">
-                <select
-                  aria-label="Language selector"
-                  onChange={(e) => i18n.changeLanguage(e.target.value)}
-                  defaultValue={i18n.language || 'en'}
-                  className="mr-4 rounded-md px-2 py-1 text-sm"
-                >
-                  <option value="en">EN</option>
-                  <option value="es">ES</option>
-                  <option value="fr">FR</option>
-                  <option value="de">DE</option>
-                  <option value="zh">中文</option>
-                </select>
-              </div>
+              {/* Show language selector only on non-admin pages */}
+              {!location.pathname.startsWith('/admin') && (
+                <div className="hidden sm:block">
+                  <select
+                    aria-label="Language selector"
+                    onChange={(e) => i18n.changeLanguage(e.target.value)}
+                    defaultValue={i18n.language || 'en'}
+                    className="mr-4 rounded-md px-2 py-1 text-sm"
+                  >
+                    <option value="en">EN</option>
+                    <option value="es">ES</option>
+                    <option value="fr">FR</option>
+                    <option value="de">DE</option>
+                    <option value="zh">中文</option>
+                  </select>
+                </div>
+              )}
               {/* Dashboard quick link */}
               <Link
                 to="/dashboard"

@@ -87,7 +87,7 @@ export default function LoginPage() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-card p-8">
+            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-card p-8" autoComplete="off">
               <h2 className="text-2xl font-semibold text-gray-900 mb-2">
                 {isLogin ? 'Welcome back' : 'Create your account'}
               </h2>
@@ -141,6 +141,8 @@ export default function LoginPage() {
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
+                    name="email"
+                    autoComplete="off"
                     type="email"
                     placeholder="Enter your email"
                     value={email}
@@ -158,6 +160,8 @@ export default function LoginPage() {
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
+                    name="password"
+                    autoComplete="off"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
                     value={password}

@@ -125,24 +125,7 @@ export default function AdminSettings() {
             </div>
           </form>
 
-          <div className="mt-6 border-t pt-6">
-            <h2 className="text-lg font-semibold mb-3">Upload Image for Tracking</h2>
-            <p className="text-sm text-gray-600 mb-4">Attach a photo of the goods to a tracking number so customers can view it on the tracking page.</p>
-            <form onSubmit={handleUpload} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tracking Number</label>
-                <Input value={uploadTracking} onChange={(e) => setUploadTracking(e.target.value)} placeholder="Enter tracking number" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
-                <input id="admin-image-upload" type="file" accept="image/*" className="" />
-              </div>
-              <div className="flex items-center gap-3">
-                <Button type="submit" className="bg-fedex-orange text-white">Upload Image</Button>
-                {filePreview && <img src={filePreview} alt="preview" className="h-12 rounded-md" />}
-              </div>
-            </form>
-          </div>
+          {/* Upload moved to public tracking page for admin attachments */}
         </div>
       </div>
     </div>

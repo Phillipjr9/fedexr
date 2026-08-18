@@ -32,6 +32,8 @@ const paymentMethods = [
 export default function UserDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
 
+  const userName = typeof window !== 'undefined' ? (localStorage.getItem('userName') || 'Member') : 'Member';
+
   return (
     <div className="min-h-screen bg-fedex-gray">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -43,7 +45,7 @@ export default function UserDashboard() {
                 JD
               </div>
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900">Welcome back, John!</h1>
+                <h1 className="text-2xl font-semibold text-gray-900">Welcome back, {userName}!</h1>
                 <p className="text-gray-500">Member since 2023</p>
               </div>
             </div>
@@ -162,7 +164,7 @@ export default function UserDashboard() {
                   <div className="bg-white rounded-lg shadow-sm p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
                     <div className="grid md:grid-cols-3 gap-4">
-                      <Link to="/shipping">
+                      <Link to="/shipping/create">
                         <Button className="w-full bg-fedex-purple hover:bg-fedex-purple-dark">
                           <Package className="mr-2 h-4 w-4" />
                           Create Shipment

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 export default function AdminSettings() {
+  const navigate = useNavigate();
   const [current, setCurrent] = useState('');
   const [newPass, setNewPass] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -12,6 +14,10 @@ export default function AdminSettings() {
   useEffect(() => {
     const s = localStorage.getItem('adminPassword');
     setStored(s ?? null);
+    const isAdmin = localStorage.getItem('isAdmin');
+    if (!isAdmin) {
+      navigate('/admin');
+    }
   }, []);
 
   const handleChange = (e: React.FormEvent) => {

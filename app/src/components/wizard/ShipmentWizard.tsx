@@ -9,7 +9,6 @@ import {
   ChevronRight,
   CheckCircle,
   Ruler,
-  Calendar,
   Camera,
   Upload,
 } from 'lucide-react';
@@ -71,7 +70,14 @@ export default function ShipmentWizard() {
 
   const handleInputChange = (section: keyof typeof initialFormData, field: string, value: any) => {
     setFormData(prev => {
-      const sectionData = prev[section];
+      const sectionData = prev[section] as any;
+      if (typeof sectionData !== 'object' || sectionData === null) {
+        return {
+          ...prev,
+          [section]: value,
+        } as any;
+      }
+
       return {
         ...prev,
         [section]: {

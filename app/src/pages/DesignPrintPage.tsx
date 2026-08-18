@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Printer, FileText, Image, PenTool, Upload, CheckCircle, ChevronRight, Palette, Ruler, Truck, Camera } from 'lucide-react';
+import { Printer, FileText, Image, PenTool, Upload, CheckCircle, ChevronRight, Palette, Ruler, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FadeInOnScroll from '@/components/animations/FadeInOnScroll';
 import ShipmentWizard from '@/components/wizard/ShipmentWizard';

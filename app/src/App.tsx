@@ -14,6 +14,7 @@ import SupportPage from '@/pages/SupportPage';
 import LoginPage from '@/pages/LoginPage';
 import RateCalculator from '@/pages/RateCalculator';
 import AdminSettings from '@/pages/AdminSettings';
+import AdminLogin from '@/pages/AdminLogin';
 import ShipmentWizard from '@/components/wizard/ShipmentWizard';
 import UserDashboard from '@/components/dashboard/UserDashboard';
 import SuppliesStore from '@/components/store/SuppliesStore';
@@ -60,6 +61,7 @@ function App() {
             <Route path="/support" element={<SupportPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/rate-calculator" element={<RateCalculator />} />
+            <Route path="/admin" element={<AdminLogin />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
             <Route path="/dashboard" element={<UserDashboard />} />
             <Route path="/store" element={<SuppliesStore />} />

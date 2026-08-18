@@ -169,7 +169,7 @@ export default function Header() {
                   <select
                     aria-label="Language selector"
                     onChange={(e) => i18n.changeLanguage(e.target.value)}
-                    defaultValue={i18n.language || 'en'}
+                    value={i18n.language || 'en'}
                     className="mr-4 rounded-md px-2 py-1 text-sm"
                   >
                     <option value="en">EN</option>

@@ -141,7 +141,7 @@ export default function LoginPage() {
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
-                    name="email"
+                    name="login-email"
                     autoComplete="off"
                     type="email"
                     placeholder="Enter your email"
@@ -160,8 +160,8 @@ export default function LoginPage() {
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
-                    name="password"
-                    autoComplete="off"
+                    name="login-password"
+                    autoComplete="new-password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
                     value={password}

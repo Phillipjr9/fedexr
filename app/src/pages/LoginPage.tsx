@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, Lock, Mail, User, CheckCircle, ChevronRight, Truck, Gift, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import FadeInOnScroll from '@/components/animations/FadeInOnScroll';
 
 const benefits = [
@@ -31,14 +32,41 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLogin) {
-      alert(`Logging in with: ${email}`);
-    } else {
-      alert(`Creating account for: ${firstName} ${lastName}`);
-    }
+    setIsSubmitting(true);
+
+    // Simple client-side auth for demo purposes
+    // In production this would call a real backend
+    setTimeout(() => {
+      if (isLogin) {
+        // Accept any non-empty credentials for demo
+        if (email && password) {
+          const name = email.split('@')[0] || 'Member';
+          localStorage.setItem('userName', name.charAt(0).toUpperCase() + name.slice(1));
+          localStorage.setItem('userEmail', email);
+          localStorage.setItem('isLoggedIn', 'true');
+          toast.success('Successfully signed in');
+          navigate('/dashboard');
+        } else {
+          toast.error('Please enter email and password');
+        }
+      } else {
+        if (firstName && lastName && email && password) {
+          localStorage.setItem('userName', `${firstName} ${lastName}`);
+          localStorage.setItem('userEmail', email);
+          localStorage.setItem('isLoggedIn', 'true');
+          toast.success('Account created successfully');
+          navigate('/dashboard');
+        } else {
+          toast.error('Please fill in all fields');
+        }
+      }
+      setIsSubmitting(false);
+    }, 600);
   };
 
   return (
@@ -211,10 +239,11 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full bg-fedex-purple hover:bg-fedex-purple-dark text-white font-semibold uppercase tracking-wide py-6"
               >
-                {isLogin ? 'Sign In' : 'Create Account'}
-                <ChevronRight className="ml-2 h-5 w-5" />
+                {isSubmitting ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+                {!isSubmitting && <ChevronRight className="ml-2 h-5 w-5" />}
               </Button>
             </form>
 

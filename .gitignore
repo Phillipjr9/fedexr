@@ -1,3 +1,11 @@
 .vercel
 .env*
 node_modules
+.arena/
+.cache/
+image-search/
+app/dist/
+app/test-results/
+app/playwright-report/
+
+!.env.example

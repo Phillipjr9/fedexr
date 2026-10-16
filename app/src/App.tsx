@@ -1,8 +1,18 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { MotionConfig } from 'framer-motion';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Link,
+  Navigate,
+  useLocation,
+} from 'react-router-dom';
 import './i18n';
 import { Toaster } from 'sonner';
-import { useTranslation } from 'react-i18next';
 import Header from '@/components/Header';
+import WorkspaceProvider from '@/components/workspace/WorkspaceProvider';
+import ProtectedWorkspace from '@/components/workspace/ProtectedWorkspace';
 import Footer from '@/components/Footer';
 import LiveChat from '@/components/chat/LiveChat';
 import HomePage from '@/pages/HomePage';
@@ -13,6 +23,8 @@ import LocationsPage from '@/pages/LocationsPage';
 import SupportPage from '@/pages/SupportPage';
 import LoginPage from '@/pages/LoginPage';
 import RateCalculator from '@/pages/RateCalculator';
+import PickupPage from '@/pages/PickupPage';
+import { ServiceNotice } from '@/components/ServiceLayout';
 import AdminSettings from '@/pages/AdminSettings';
 import AdminLogin from '@/pages/AdminLogin';
 import ShipmentWizard from '@/components/wizard/ShipmentWizard';
@@ -20,59 +32,109 @@ import UserDashboard from '@/components/dashboard/UserDashboard';
 import SuppliesStore from '@/components/store/SuppliesStore';
 import ReturnsPortal from '@/components/returns/ReturnsPortal';
 import './App.css';
+import './service-pages.css';
 
-// Create Shipment Page wrapper
 function CreateShipmentPage() {
-  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-fedex-gray py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-semibold text-gray-900 mb-8 text-center">{t('shipment.title')}</h1>
+        <h1 className="text-3xl font-semibold text-gray-900 mb-8 text-center">
+          Create a shipment plan
+        </h1>
+        <div className="max-w-4xl mx-auto mb-7">
+          <ServiceNotice title="Shipment planning tool">
+            Prepare a local plan or download a brief. This form does not create a FedEx label, book
+            a shipment, or collect payment information. Use non-sensitive details; shipping and
+            billing stay on the official carrier website.
+          </ServiceNotice>
+        </div>
         <ShipmentWizard />
       </div>
     </div>
   );
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
+function AdminIndexRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/admin/login${location.search}`} replace />;
+}
+
+function NotFoundPage() {
+  return (
+    <div className="site-container py-20 text-center">
+      <h1 className="text-4xl font-light mb-5">We couldn’t find that page</h1>
+      <p className="text-gray-600 mb-8">Let’s get you back to shipping, tracking, and more.</p>
+      <Link to="/" className="brand-button brand-button-outline">
+        Back to home
+      </Link>
+    </div>
+  );
+}
+
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-white">
-        <Toaster 
-          position="top-right" 
-          richColors 
-          closeButton
-          toastOptions={{
-            style: {
-              fontFamily: 'Arial, Helvetica, sans-serif',
-            },
-          }}
-        />
-        <Header />
-        
-        <main className="pt-16">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/shipping" element={<ShippingPage />} />
-            <Route path="/shipping/create" element={<CreateShipmentPage />} />
-            <Route path="/tracking" element={<TrackingPage />} />
-            <Route path="/design-print" element={<DesignPrintPage />} />
-            <Route path="/locations" element={<LocationsPage />} />
-            <Route path="/support" element={<SupportPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/rate-calculator" element={<RateCalculator />} />
-            <Route path="/admin" element={<AdminLogin />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
-            <Route path="/dashboard" element={<UserDashboard />} />
-            <Route path="/store" element={<SuppliesStore />} />
-            <Route path="/returns" element={<ReturnsPortal />} />
-          </Routes>
-        </main>
-        
-        <Footer />
-        <LiveChat />
-      </div>
-    </Router>
+    <MotionConfig reducedMotion="user">
+      <Router>
+        <WorkspaceProvider>
+          <ScrollToTop />
+          <div className="min-h-screen bg-white">
+            <Toaster
+              position="top-right"
+              richColors
+              closeButton
+              toastOptions={{ style: { fontFamily: 'Roboto, Arial, Helvetica, sans-serif' } }}
+            />
+            <Header />
+            <main id="main-content" className="site-main" tabIndex={-1}>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/en-us/home.html" element={<HomePage />} />
+                <Route path="/shipping" element={<ShippingPage />} />
+                <Route path="/shipping/create" element={<CreateShipmentPage />} />
+                <Route path="/shipping/pickup" element={<PickupPage />} />
+                <Route path="/tracking" element={<TrackingPage />} />
+                <Route path="/design-print" element={<DesignPrintPage />} />
+                <Route path="/locations" element={<LocationsPage />} />
+                <Route path="/support" element={<SupportPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/rate-calculator" element={<RateCalculator />} />
+                <Route path="/admin" element={<AdminIndexRedirect />} />
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route
+                  path="/admin/settings"
+                  element={
+                    <ProtectedWorkspace admin>
+                      <AdminSettings />
+                    </ProtectedWorkspace>
+                  }
+                />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedWorkspace>
+                      <UserDashboard />
+                    </ProtectedWorkspace>
+                  }
+                />
+                <Route path="/store" element={<SuppliesStore />} />
+                <Route path="/returns" element={<ReturnsPortal />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </main>
+            <Footer />
+            <LiveChat />
+          </div>
+        </WorkspaceProvider>
+      </Router>
+    </MotionConfig>
   );
 }
 

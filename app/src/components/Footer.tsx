@@ -1,149 +1,163 @@
-import { motion } from 'framer-motion';
-import { Mail, Facebook, Twitter, Instagram, Linkedin, Youtube } from 'lucide-react';
+import { Facebook, Instagram, Linkedin, Youtube, Globe, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import FadeInOnScroll from './animations/FadeInOnScroll';
+import { useTranslation } from 'react-i18next';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 const companyLinks = [
-  { label: 'About FedEx', href: '/support' },
-  { label: 'Our Portfolio', href: '/support' },
-  { label: 'Investor Relations', href: '/support' },
-  { label: 'Careers', href: '/support' },
-  { label: 'FedEx Blog', href: '/support' },
-  { label: 'Corporate Responsibility', href: '/support' },
-  { label: 'Newsroom', href: '/support' },
-  { label: 'Contact Us', href: '/support' },
-];
-
-const moreLinks = [
-  { label: 'FedEx Compatible', href: '/support' },
-  { label: 'FedEx Developer Portal', href: '/support' },
-  { label: 'FedEx Logistics', href: '/support' },
+  { label: 'About FedEx', href: 'https://www.fedex.com/en-us/about.html' },
+  { label: 'Our Portfolio', href: 'https://www.fedex.com/en-us/about/company-structure.html' },
+  { label: 'Investor Relations', href: 'https://investors.fedex.com/' },
+  { label: 'Careers', href: 'https://careers.fedex.com/' },
+  { label: 'Corporate Responsibility', href: 'https://www.fedex.com/en-us/sustainability.html' },
+  { label: 'Newsroom', href: 'https://newsroom.fedex.com/' },
 ];
 
 const socialLinks = [
-  { icon: Mail, href: '/support', label: 'Email' },
-  { icon: Facebook, href: '/support', label: 'Facebook' },
-  { icon: Twitter, href: '/support', label: 'Twitter' },
-  { icon: Instagram, href: '/support', label: 'Instagram' },
-  { icon: Linkedin, href: '/support', label: 'LinkedIn' },
-  { icon: Youtube, href: '/support', label: 'YouTube' },
-];
-
-const legalLinks = [
-  { label: 'Site Map', href: '/support' },
-  { label: 'Cookie Consent', href: '/support' },
-  { label: 'Terms of Use', href: '/support' },
-  { label: 'Privacy & Security', href: '/support' },
-  { label: 'Ad Choices', href: '/support' },
+  { icon: Facebook, href: 'https://www.facebook.com/FedEx/', label: 'FedEx on Facebook' },
+  { icon: Instagram, href: 'https://www.instagram.com/fedex/', label: 'FedEx on Instagram' },
+  { icon: Linkedin, href: 'https://www.linkedin.com/company/fedex/', label: 'FedEx on LinkedIn' },
+  { icon: Youtube, href: 'https://www.youtube.com/fedex', label: 'FedEx on YouTube' },
 ];
 
 export default function Footer() {
+  const { i18n } = useTranslation();
+
   return (
-    <footer className="bg-white border-t border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {/* Our Company */}
-          <FadeInOnScroll>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Our Company</h3>
-              <ul className="space-y-3">
-                {companyLinks.map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      to={link.href}
-                      className="text-sm text-gray-600 hover:text-fedex-purple transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </FadeInOnScroll>
-
-          {/* More From FedEx */}
-          <FadeInOnScroll delay={0.1}>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">More From FedEx</h3>
-              <ul className="space-y-3">
-                {moreLinks.map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      to={link.href}
-                      className="text-sm text-gray-600 hover:text-fedex-purple transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </FadeInOnScroll>
-
-          {/* Language */}
-          <FadeInOnScroll delay={0.2}>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Language</h3>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600">United States</p>
-                <button className="text-sm text-fedex-link hover:text-fedex-link-dark transition-colors">
-                  English
-                </button>
-              </div>
-            </div>
-          </FadeInOnScroll>
-
-          {/* Follow FedEx */}
-          <FadeInOnScroll delay={0.3}>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Follow FedEx</h3>
-              <div className="flex flex-wrap gap-3">
-                {socialLinks.map((social) => (
-                  <Link
-                    key={social.label}
-                    to={social.href}
-                  >
-                    <motion.div
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-fedex-purple hover:text-white transition-colors"
-                      aria-label={social.label}
-                    >
-                      <social.icon className="h-5 w-5" />
-                    </motion.div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </FadeInOnScroll>
-        </div>
-
-        {/* Bottom Bar */}
-        <FadeInOnScroll delay={0.4}>
-          <div className="mt-12 pt-8 border-t border-gray-200">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <p className="text-sm text-gray-500">
-                © FedEx 1995-2026
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
-                {legalLinks.map((link, index) => (
-                  <span key={link.label} className="flex items-center">
-                    <Link
-                      to={link.href}
-                      className="text-gray-500 hover:text-fedex-purple transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                    {index < legalLinks.length - 1 && (
-                      <span className="mx-2 text-gray-300">|</span>
-                    )}
-                  </span>
-                ))}
-              </div>
-            </div>
+    <footer className="site-footer">
+      <div className="site-container footer-main">
+        <div className="footer-columns">
+          <div className="footer-company">
+            <h2>Our company</h2>
+            <ul>
+              {companyLinks.map((link) => (
+                <li key={link.label}>
+                  <a href={link.href} target="_blank" rel="noopener noreferrer">
+                    {link.label}
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </a>
+                </li>
+              ))}
+              <li>
+                <Link to="/support">Contact us</Link>
+              </li>
+            </ul>
           </div>
-        </FadeInOnScroll>
+          <div>
+            <h2>More from FedEx</h2>
+            <ul>
+              <li>
+                <a href="https://developer.fedex.com/" target="_blank" rel="noopener noreferrer">
+                  FedEx Developer Portal<span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              </li>
+              <li>
+                <Link to="/store">Shipping supplies</Link>
+              </li>
+              <li>
+                <Link to="/dashboard">Your dashboard</Link>
+              </li>
+              <li>
+                <Link to="/returns">Returns</Link>
+              </li>
+            </ul>
+          </div>
+          <div className="footer-language">
+            <h2>Language</h2>
+            <p>
+              <Globe size={20} strokeWidth={1.3} aria-hidden="true" /> United States
+            </p>
+            <label htmlFor="footer-language" className="sr-only">
+              Site language
+            </label>
+            <select
+              id="footer-language"
+              value={i18n.resolvedLanguage || 'en'}
+              onChange={(event) => void i18n.changeLanguage(event.target.value)}
+            >
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="fr">Français</option>
+              <option value="de">Deutsch</option>
+              <option value="zh">中文</option>
+            </select>
+          </div>
+        </div>
+        <div className="footer-social">
+          <h2>Follow FedEx</h2>
+          <Link to="/support" aria-label="Contact support">
+            <Mail size={18} strokeWidth={1.5} aria-hidden="true" />
+          </Link>
+          {socialLinks.map((social) => (
+            <a
+              key={social.label}
+              href={social.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${social.label} (opens in a new tab)`}
+            >
+              <social.icon size={17} strokeWidth={1.5} aria-hidden="true" />
+            </a>
+          ))}
+        </div>
       </div>
+      <div className="footer-bottom">
+        <div className="site-container footer-bottom-inner">
+          <p>© FedEx 1995–{new Date().getFullYear()}</p>
+          <nav aria-label="Legal and privacy">
+            <Link to="/support">Site information</Link>
+            <Link to="/admin/login">Admin login</Link>
+            <Dialog>
+              <DialogTrigger asChild>
+                <button type="button">Cookie preferences</button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogTitle>Cookie preferences</DialogTitle>
+                <DialogDescription>
+                  This site does not set advertising or analytics cookies. Server-backed accounts
+                  store records in the database and use an essential HttpOnly session cookie.
+                  Sign-out revokes that session; clearing browser storage does not delete server
+                  records. Browser-local mode stores profiles, passphrase-derived hashes, addresses,
+                  and plans in this browser; its sign-out clears only the tab session. Browser
+                  storage also remembers your local supply list (product identifiers and desired
+                  quantities only). Clear the supply list to remove its saved data. Return-plan
+                  notes and photos stay in the current page session and are not uploaded or saved in
+                  browser storage.
+                </DialogDescription>
+                <DialogClose asChild>
+                  <button type="button" className="brand-button brand-button-outline">
+                    Got it
+                  </button>
+                </DialogClose>
+              </DialogContent>
+            </Dialog>
+            <a
+              href="https://www.fedex.com/en-us/terms-of-use.html"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Terms of use<span className="sr-only"> (opens in a new tab)</span>
+            </a>
+            <a
+              href="https://www.fedex.com/en-us/trust-center.html"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Privacy & security<span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          </nav>
+        </div>
+      </div>
+      <p className="site-container project-disclaimer">
+        Independent project, not affiliated with FedEx. These tools are not connected to live FedEx
+        shipping, account, or tracking services.
+      </p>
     </footer>
   );
 }

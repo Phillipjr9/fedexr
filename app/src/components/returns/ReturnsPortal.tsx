@@ -1,319 +1,157 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Package, Search, Camera, CheckCircle, ChevronRight, ArrowLeft, Truck, DollarSign, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { toast } from 'sonner';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Download, FileText, Package, QrCode, RotateCcw, Trash2, Upload } from 'lucide-react';
+import BrandImage from '@/components/BrandImage';
+import LocalPhotoPreview from '@/components/LocalPhotoPreview';
+import { ServiceNotice, ExternalLink, ServiceHero } from '@/components/ServiceLayout';
+import { siteImages } from '@/lib/siteAssets';
+import { downloadText } from '@/lib/localDownloads';
+import { claimReasons, nextSteps, officialClaimCenter, officialReturnGuide, packageConditions, photoFileError, returnBriefText, returnLabelOptions, returnPlanErrors, returnReasons, validReference, type LocalPhoto, type ReturnMode, type ReturnPlan } from '@/lib/returns';
+import '@/commerce-pages.css';
 
-interface ReturnRequest {
-  trackingNumber: string;
-  reason: string;
-  condition: string;
-  photos: string[];
-  refundMethod: string;
-}
-
-const returnReasons = [
-  { id: 'damaged', label: 'Item arrived damaged', description: 'The package or item was damaged during shipping' },
-  { id: 'wrong', label: 'Wrong item received', description: 'I received a different item than what I ordered' },
-  { id: 'missing', label: 'Item missing from package', description: 'The package arrived but the item was not inside' },
-  { id: 'late', label: 'Package arrived late', description: 'The delivery was delayed beyond the promised date' },
-  { id: 'other', label: 'Other reason', description: 'Please provide details in the comments' },
-];
-
-const conditions = [
-  { id: 'unopened', label: 'Unopened', description: 'Package has not been opened' },
-  { id: 'opened', label: 'Opened but unused', description: 'Package opened but item not used' },
-  { id: 'used', label: 'Used', description: 'Item has been used' },
-  { id: 'damaged', label: 'Damaged', description: 'Item or package is damaged' },
-];
-
-const refundMethods = [
-  { id: 'original', label: 'Original Payment Method', description: 'Refund to the card used for purchase' },
-  { id: 'credit', label: 'FedEx Account Credit', description: 'Credit applied to your FedEx account' },
-];
+type PlanStep = 1 | 2 | 3 | 4;
+const steps = ['Your package', 'Details', 'Review', 'Local brief'];
+const emptyPlan = (mode: ReturnMode = 'return'): ReturnPlan => ({ mode, reference: '', label: '', reason: '', condition: '', notes: '' });
 
 export default function ReturnsPortal() {
-  const [step, setStep] = useState(1);
-  const [trackingNumber, setTrackingNumber] = useState('');
-  const [returnData, setReturnData] = useState<Partial<ReturnRequest>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [params] = useSearchParams();
+  const [step, setStep] = useState<PlanStep>(1);
+  const [plan, setPlan] = useState<ReturnPlan>(() => ({ ...emptyPlan(params.get('mode') === 'claim' ? 'claim' : 'return'), reference: (params.get('number') || '').slice(0, 40) }));
+  const [photos, setPhotos] = useState<LocalPhoto[]>([]);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [photoError, setPhotoError] = useState('');
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
+  const plannerRef = useRef<HTMLElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
+  const previousStep = useRef(step);
+  const sequence = useRef(0);
+  const reasons = plan.mode === 'claim' ? claimReasons : returnReasons;
+  const destination = plan.mode === 'claim' ? officialClaimCenter : officialReturnGuide;
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (trackingNumber.trim()) {
-      setStep(2);
+  useEffect(() => {
+    if (previousStep.current !== step) headingRef.current?.focus();
+    previousStep.current = step;
+  }, [step]);
+
+  function update<K extends keyof ReturnPlan>(key: K, value: ReturnPlan[K]) {
+    setPlan((previous) => ({ ...previous, [key]: value }));
+    setAcknowledged(false);
+    setDownloaded(false);
+  }
+
+  function selectMode(mode: ReturnMode) {
+    setPlan((previous) => previous.mode === mode ? previous : { ...previous, mode, reason: '' });
+    setErrors([]);
+    setAcknowledged(false);
+    setDownloaded(false);
+  }
+
+  function start(mode: ReturnMode) {
+    selectMode(mode);
+    setStep(1);
+    plannerRef.current?.scrollIntoView({ block: 'start' });
+    headingRef.current?.focus({ preventScroll: true });
+  }
+
+  function continuePlan(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (step !== 1 && step !== 2) return;
+    const nextErrors = returnPlanErrors(plan, step);
+    setErrors(nextErrors);
+    if (nextErrors.length) {
+      const invalid = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
+      // React applies aria-invalid with the error update; focus a known relevant field now.
+      const target = step === 1 ? !validReference(plan.reference) ? 'return-reference' : 'return-label-printed' : !plan.reason ? 'return-reason' : 'return-condition';
+      (invalid || document.getElementById(target))?.focus();
+      return;
     }
-  };
+    setStep(step === 1 ? 2 : 3);
+  }
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    toast.success('Return request submitted successfully!');
-    setIsSubmitting(false);
-    setStep(5);
-  };
+  function choosePhotos(event: ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(event.target.files || []);
+    event.target.value = '';
+    if (selected.length === 0) return;
+    const error = selected.map(photoFileError).find(Boolean);
+    if (error) { setPhotoError(error); return; }
+    const unique = selected.filter((file, index) => !photos.some((photo) => photo.file.name === file.name && photo.file.size === file.size && photo.file.lastModified === file.lastModified) && selected.findIndex((other) => other.name === file.name && other.size === file.size && other.lastModified === file.lastModified) === index);
+    if (photos.length + unique.length > 3) { setPhotoError('Select at most 3 local photos. Remove a photo before adding another.'); return; }
+    setPhotos((previous) => [...previous, ...unique.map((file) => ({ id: `photo-${++sequence.current}`, file }))]);
+    setPhotoError(unique.length ? '' : 'This photo is already selected. No duplicate was added.');
+    setAcknowledged(false);
+    setDownloaded(false);
+  }
+
+  function prepareBrief(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!acknowledged) { setErrors(['Confirm that this creates a local brief only, not a return or claim submission.']); document.getElementById('return-confirm')?.focus(); return; }
+    setErrors([]);
+    setStep(4);
+  }
+
+  function download() {
+    downloadText(`${plan.mode}-preparation-brief.txt`, returnBriefText(plan, photos));
+    setDownloaded(true);
+  }
+
+  function reset() {
+    setPlan(emptyPlan());
+    setPhotos([]);
+    setErrors([]);
+    setPhotoError('');
+    setAcknowledged(false);
+    setDownloaded(false);
+    setStep(1);
+  }
+
+  function summary() {
+    return <dl className="return-summary"><dt>Plan type</dt><dd>{plan.mode === 'claim' ? 'Shipping claim preparation' : 'Retailer return preparation'}</dd><dt>Reference</dt><dd>{plan.reference.trim() || 'Not provided — no lookup performed'}</dd>{plan.mode === 'return' && <><dt>Label situation</dt><dd>{returnLabelOptions.find((option) => option.id === plan.label)?.label}</dd></>}<dt>Reason</dt><dd>{reasons.find((reason) => reason.id === plan.reason)?.label}</dd><dt>Condition</dt><dd>{packageConditions.find((condition) => condition.id === plan.condition)?.label}</dd><dt>Notes</dt><dd>{plan.notes.trim() || 'None'}</dd><dt>Photo references</dt><dd>{photos.length ? <ul>{photos.map((photo) => <li key={photo.id}>{photo.file.name} · {(photo.file.size / 1024).toFixed(1)} KB</li>)}</ul> : 'None selected'}</dd></dl>;
+  }
 
   return (
-    <div className="min-h-screen bg-fedex-gray py-12">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-semibold text-gray-900 mb-2">Returns & Claims</h1>
-          <p className="text-gray-600">File a return or claim for your shipment</p>
-        </div>
-
-        {/* Progress */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            {[
-              { num: 1, label: 'Find Package' },
-              { num: 2, label: 'Reason' },
-              { num: 3, label: 'Details' },
-              { num: 4, label: 'Submit' },
-              { num: 5, label: 'Confirmation' },
-            ].map((s) => (
-              <div key={s.num} className="flex flex-col items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium mb-1 ${
-                  step >= s.num ? 'bg-fedex-purple text-white' : 'bg-gray-200 text-gray-500'
-                }`}>
-                  {step > s.num ? <CheckCircle className="h-4 w-4" /> : s.num}
-                </div>
-                <span className={`text-xs ${step >= s.num ? 'text-fedex-purple' : 'text-gray-400'}`}>
-                  {s.label}
-                </span>
-              </div>
-            ))}
+    <div className="service-page returns-page">
+      <ServiceHero eyebrow="Returns & Claims" title="Make your next step simpler" description="Returning an item or preparing a shipping claim? Organize your notes here, then use the retailer’s instructions or the official FedEx tools to take the next step." image={siteImages.returnsKiosk}>
+        <button type="button" className="brand-button brand-button-orange" onClick={() => start('return')}>Prepare a return brief</button>
+        <button type="button" className="service-text-link" onClick={() => start('claim')}>Prepare a claim brief <ArrowRight size={16} aria-hidden="true" /></button>
+      </ServiceHero>
+      <div className="site-container">
+        <section className="service-section" aria-labelledby="return-options-title">
+          <div className="service-section-heading"><div><h2 id="return-options-title">Which return situation fits?</h2><p>Follow the retailer’s instructions. Label, QR code, packaging, and drop-off requirements can differ by return program.</p></div></div>
+          <div className="service-card-grid return-option-grid">
+            <article className="service-card"><div className="service-card-content"><FileText className="service-card-icon" size={36} strokeWidth={1.4} aria-hidden="true" /><h3>Already have a label?</h3><p>Use the retailer’s label and check its packing instructions before dropping off your package.</p><ExternalLink href="https://local.fedex.com/en-us">Find official drop-off locations</ExternalLink></div></article>
+            <article className="service-card"><div className="service-card-content"><QrCode className="service-card-icon" size={36} strokeWidth={1.4} aria-hidden="true" /><h3>Have a retailer QR code?</h3><p>Check the retailer’s email for participating locations and whether you need to bring a box.</p><ExternalLink href={`${officialReturnGuide}#qRcodereturns`}>View official QR return guidance</ExternalLink></div></article>
+            <article className="service-card"><div className="service-card-content"><Package className="service-card-icon" size={36} strokeWidth={1.4} aria-hidden="true" /><h3>Need a return label?</h3><p>Contact the retailer about its return policy first. A shipping label is not issued by this sample.</p><ExternalLink href="https://www.fedex.com/lite/lite-ship.html">Explore official label creation</ExternalLink></div></article>
           </div>
-          <div className="h-2 bg-gray-200 rounded-full mt-4">
-            <motion.div
-              className="h-full bg-fedex-purple rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${((step - 1) / 4) * 100}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-        </div>
+        </section>
 
-        {/* Content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="bg-white rounded-lg shadow-lg p-8"
-          >
-            {/* Step 1: Find Package */}
-            {step === 1 && (
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Find Your Package</h2>
-                <p className="text-gray-600 mb-6">Enter the tracking number of the package you want to return or file a claim for.</p>
-                <form onSubmit={handleSearch}>
-                  <div className="flex gap-4">
-                    <div className="flex-1 relative">
-                      <Package className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                      <Input
-                        type="text"
-                        placeholder="Enter tracking number"
-                        value={trackingNumber}
-                        onChange={(e) => setTrackingNumber(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                    <Button type="submit" className="bg-fedex-purple hover:bg-fedex-purple-dark">
-                      <Search className="mr-2 h-4 w-4" />
-                      Search
-                    </Button>
-                  </div>
-                </form>
+        <section className="service-section service-panel return-planner" ref={plannerRef} aria-labelledby="return-plan-heading">
+          <ServiceNotice title="Local preparation, not a submission">No shipment is looked up, no return or claim is filed, and no email, refund, label, or resolution date is promised. Use sample/reference details only. Selected photos stay in this tab and are never uploaded by this planner.</ServiceNotice>
+          <ol className="return-stepper" aria-label="Preparation progress">{steps.map((label, index) => <li key={label} aria-current={step === index + 1 ? 'step' : undefined} data-complete={step > index + 1}><span className="return-step-number" aria-hidden="true">{step > index + 1 ? <Check size={17} /> : index + 1}</span><span>{label}</span></li>)}</ol>
+          <h2 id="return-plan-heading" ref={headingRef} tabIndex={-1}>{step === 1 ? 'Tell us about your package' : step === 2 ? 'Add details and local photos' : step === 3 ? 'Review your preparation brief' : 'Your local brief is ready'}</h2>
+          {(step === 1 || step === 2) && <form ref={formRef} onSubmit={continuePlan} noValidate className="return-step-form">
+            {step === 1 ? <>
+              <fieldset className="return-fieldset"><legend>What would you like to prepare?</legend><div className="return-mode-grid">{(['return', 'claim'] as const).map((mode) => <label key={mode} className="return-radio-card"><input type="radio" name="return-mode" value={mode} checked={plan.mode === mode} onChange={() => selectMode(mode)} /><span><strong>{mode === 'return' ? 'Return to a retailer' : 'Shipping claim notes'}</strong><small>{mode === 'return' ? 'Follow the retailer’s policy and return instructions.' : 'Check official FedEx eligibility and filing requirements.'}</small></span></label>)}</div></fieldset>
+              <div className="service-field"><label htmlFor="return-reference">Tracking number or reference (optional)</label><input id="return-reference" value={plan.reference} onChange={(event) => update('reference', event.target.value)} maxLength={40} autoComplete="off" placeholder="e.g., EXAMPLE-12345" aria-invalid={errors.length > 0 && !validReference(plan.reference)} aria-describedby="return-reference-help" /><small id="return-reference-help">4–40 letters, numbers, spaces, or hyphens. This is stored in your local brief, not checked against a carrier database.</small></div>
+              {plan.mode === 'return' && <fieldset className="return-fieldset"><legend>Do you have a return label?</legend><div className="return-label-grid">{returnLabelOptions.map((option) => <label key={option.id} className="return-radio-card"><input id={`return-label-${option.id}`} type="radio" name="return-label" value={option.id} checked={plan.label === option.id} onChange={() => update('label', option.id)} aria-invalid={errors.length > 0 && !plan.label} /><span><strong>{option.label}</strong><small>{option.description}</small></span></label>)}</div></fieldset>}
+            </> : <>
+              <div className="service-form-two-column"><div className="service-field"><label htmlFor="return-reason">{plan.mode === 'claim' ? 'Claim preparation reason' : 'Return reason'}</label><select id="return-reason" value={plan.reason} onChange={(event) => update('reason', event.target.value)} required aria-invalid={errors.length > 0 && !plan.reason}><option value="">Choose a reason</option>{reasons.map((reason) => <option key={reason.id} value={reason.id}>{reason.label}</option>)}</select></div><div className="service-field"><label htmlFor="return-condition">Package condition</label><select id="return-condition" value={plan.condition} onChange={(event) => update('condition', event.target.value)} required aria-invalid={errors.length > 0 && !plan.condition}><option value="">Choose a condition</option>{packageConditions.map((condition) => <option key={condition.id} value={condition.id}>{condition.label}</option>)}</select></div></div>
+              <div className="service-field mt-6"><label htmlFor="return-notes">Notes (optional)</label><textarea id="return-notes" rows={4} maxLength={1000} value={plan.notes} onChange={(event) => update('notes', event.target.value)} placeholder="Describe the issue using sample/reference details. Do not include passwords or payment information." /></div>
+              <div className="return-photo-section"><label htmlFor="return-photos" className="print-file-label"><Upload size={24} strokeWidth={1.4} aria-hidden="true" />Choose local reference photos</label><input id="return-photos" ref={photoRef} type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" multiple className="print-file-input" onChange={choosePhotos} aria-describedby="return-photo-help" aria-invalid={Boolean(photoError)} /><p id="return-photo-help" className="service-form-help mt-3">Up to 3 JPG/PNG photos, maximum 10 MB each. Filename/type/size are checked; image contents and claim eligibility are not validated. No photo is uploaded or saved in browser storage.</p>{photoError && <p className="service-form-error" role="alert">{photoError}</p>}{photos.length > 0 && <><p className="service-form-help mt-3" role="status">{photos.length} local {photos.length === 1 ? 'photo' : 'photos'} selected. Nothing uploaded.</p><div className="return-photo-grid">{photos.map((photo) => <div className="return-photo-card" key={photo.id}><LocalPhotoPreview file={photo.file} /><div><p>{photo.file.name}</p><button type="button" className="service-text-link" aria-label={`Remove local photo ${photo.file.name}`} onClick={() => { setPhotos((previous) => previous.filter((entry) => entry.id !== photo.id)); setPhotoError(''); setAcknowledged(false); }}><Trash2 size={14} aria-hidden="true" />Remove photo</button></div></div>)}</div></>}</div>
+            </>}
+            {errors.length > 0 && <div className="service-form-error" role="alert">{errors.map((error) => <p key={error}>{error}</p>)}</div>}
+            <div className="return-navigation">{step === 2 && <button type="button" className="brand-button brand-button-outline" onClick={() => { setErrors([]); setStep(1); }}><ArrowLeft size={16} aria-hidden="true" />Back</button>}<button type="submit" className="brand-button brand-button-outline">{step === 1 ? 'Continue to details' : 'Review local brief'}<ArrowRight size={16} aria-hidden="true" /></button></div>
+          </form>}
 
-                <div className="mt-8 p-4 bg-fedex-gray rounded-lg">
-                  <h3 className="font-medium text-gray-900 mb-2">Need help finding your tracking number?</h3>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• Check your shipping confirmation email</li>
-                    <li>• Look at your shipping receipt</li>
-                    <li>• Check your FedEx account order history</li>
-                  </ul>
-                </div>
-              </div>
-            )}
+          {step === 3 && <form className="return-review" onSubmit={prepareBrief} noValidate>{summary()}<div className="return-next-steps"><h3>What happens next?</h3><ol>{nextSteps(plan).map((instruction) => <li key={instruction}>{instruction}</li>)}</ol></div><label className="return-acknowledgement" htmlFor="return-confirm"><input id="return-confirm" type="checkbox" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} /><span>I understand this only prepares a local brief. Nothing is submitted and no label or refund is issued.</span></label>{errors.length > 0 && <p className="service-form-error" role="alert">{errors[0]}</p>}<div className="return-navigation"><button type="button" className="brand-button brand-button-outline" onClick={() => { setErrors([]); setStep(2); }}><ArrowLeft size={16} aria-hidden="true" />Edit details</button><button type="submit" className="brand-button brand-button-orange">Prepare local brief <ArrowRight size={16} aria-hidden="true" /></button></div></form>}
 
-            {/* Step 2: Select Reason */}
-            {step === 2 && (
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Why are you returning this?</h2>
-                <div className="space-y-3">
-                  {returnReasons.map((reason) => (
-                    <button
-                      key={reason.id}
-                      onClick={() => {
-                        setReturnData(prev => ({ ...prev, reason: reason.id }));
-                        setStep(3);
-                      }}
-                      className={`w-full p-4 border-2 rounded-lg text-left transition-colors ${
-                        returnData.reason === reason.id
-                          ? 'border-fedex-purple bg-fedex-purple/5'
-                          : 'border-gray-200 hover:border-fedex-purple/50'
-                      }`}
-                    >
-                      <p className="font-medium text-gray-900">{reason.label}</p>
-                      <p className="text-sm text-gray-500">{reason.description}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+          {step === 4 && <div className="return-ready"><div className="return-ready-message" role="status"><CheckCircle2 size={33} strokeWidth={1.4} aria-hidden="true" /><p>Your notes are ready—not submitted. No return ID, claim number, email confirmation, shipping label, or refund has been created.</p></div>{summary()}<div className="return-navigation"><button type="button" className="brand-button brand-button-outline" onClick={download}><Download size={17} aria-hidden="true" />Download {plan.mode} brief</button><ExternalLink href={destination} className="brand-button brand-button-orange">{plan.mode === 'claim' ? 'Open official claim center' : 'Continue with official return guidance'}</ExternalLink></div><p className="service-form-help mt-4">Your notes and photos are not transferred automatically. Sign in and provide the required information on the official website.</p>{downloaded && <p role="status" className="service-form-help mt-4">Your {plan.mode} brief was downloaded. It contains text and photo filenames only—not uploaded image contents or an official submission.</p>}<div className="service-actions"><button type="button" className="service-text-link" onClick={() => { setAcknowledged(false); setStep(2); }}>Edit this plan</button><button type="button" className="service-text-link" onClick={reset}><RotateCcw size={15} aria-hidden="true" />Start a new plan</button><Link to={plan.reference.trim() ? `/tracking?number=${encodeURIComponent(plan.reference.trim())}` : '/tracking'} className="service-text-link">View sample tracking <ArrowRight size={15} aria-hidden="true" /></Link></div></div>}
+        </section>
 
-            {/* Step 3: Package Condition & Photos */}
-            {step === 3 && (
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Package Details</h2>
-                
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">What is the condition of the package/item?</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {conditions.map((condition) => (
-                      <button
-                        key={condition.id}
-                        onClick={() => setReturnData(prev => ({ ...prev, condition: condition.id }))}
-                        className={`p-3 border-2 rounded-lg text-left transition-colors ${
-                          returnData.condition === condition.id
-                            ? 'border-fedex-purple bg-fedex-purple/5'
-                            : 'border-gray-200 hover:border-fedex-purple/50'
-                        }`}
-                      >
-                        <p className="font-medium text-gray-900">{condition.label}</p>
-                        <p className="text-xs text-gray-500">{condition.description}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Upload Photos (optional but recommended)</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-fedex-purple transition-colors cursor-pointer">
-                    <Camera className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600">Click to upload or drag and drop</p>
-                    <p className="text-sm text-gray-400">PNG, JPG up to 10MB each</p>
-                  </div>
-                </div>
-
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={() => setStep(2)}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back
-                  </Button>
-                  <Button
-                    onClick={() => setStep(4)}
-                    disabled={!returnData.condition}
-                    className="bg-fedex-purple hover:bg-fedex-purple-dark"
-                  >
-                    Continue
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Refund Method & Submit */}
-            {step === 4 && (
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Refund Method</h2>
-                
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">How would you like to receive your refund?</label>
-                  <div className="space-y-3">
-                    {refundMethods.map((method) => (
-                      <button
-                        key={method.id}
-                        onClick={() => setReturnData(prev => ({ ...prev, refundMethod: method.id }))}
-                        className={`w-full p-4 border-2 rounded-lg text-left transition-colors ${
-                          returnData.refundMethod === method.id
-                            ? 'border-fedex-purple bg-fedex-purple/5'
-                            : 'border-gray-200 hover:border-fedex-purple/50'
-                        }`}
-                      >
-                        <div className="flex items-center">
-                          {method.id === 'original' ? <DollarSign className="h-5 w-5 text-fedex-purple mr-3" /> : <FileText className="h-5 w-5 text-fedex-purple mr-3" />}
-                          <div>
-                            <p className="font-medium text-gray-900">{method.label}</p>
-                            <p className="text-sm text-gray-500">{method.description}</p>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-fedex-gray rounded-lg p-4 mb-6">
-                  <h3 className="font-medium text-gray-900 mb-2">Return Summary</h3>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p><strong>Tracking:</strong> {trackingNumber}</p>
-                    <p><strong>Reason:</strong> {returnReasons.find(r => r.id === returnData.reason)?.label}</p>
-                    <p><strong>Condition:</strong> {conditions.find(c => c.id === returnData.condition)?.label}</p>
-                  </div>
-                </div>
-
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={() => setStep(3)}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back
-                  </Button>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={!returnData.refundMethod || isSubmitting}
-                    className="bg-fedex-orange hover:bg-fedex-orange-dark"
-                  >
-                    {isSubmitting ? (
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                        className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
-                      />
-                    ) : (
-                      <>
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Submit Return Request
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 5: Confirmation */}
-            {step === 5 && (
-              <div className="text-center">
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="h-10 w-10 text-green-600" />
-                </div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Return Request Submitted!</h2>
-                <p className="text-gray-600 mb-6">
-                  Your return request has been received. We&apos;ll send you a confirmation email with next steps.
-                </p>
-                <div className="bg-fedex-gray rounded-lg p-4 mb-6 text-left">
-                  <p className="text-sm text-gray-600"><strong>Return ID:</strong> RET-{Date.now().toString().slice(-8)}</p>
-                  <p className="text-sm text-gray-600"><strong>Tracking:</strong> {trackingNumber}</p>
-                  <p className="text-sm text-gray-600"><strong>Expected Resolution:</strong> 5-7 business days</p>
-                </div>
-                <div className="flex justify-center gap-4">
-                  <Button onClick={() => {
-                    setStep(1);
-                    setTrackingNumber('');
-                    setReturnData({});
-                  }} className="bg-fedex-purple hover:bg-fedex-purple-dark">
-                    Start New Return
-                  </Button>
-                  <Button variant="outline">
-                    <Truck className="mr-2 h-4 w-4" />
-                    Track Status
-                  </Button>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+        <section className="service-section service-feature" aria-labelledby="returns-packaging-title"><BrandImage image={siteImages.packaging} /><div className="service-feature-copy"><h2 id="returns-packaging-title">Check whether your packaging is reusable</h2><p>If your shipment came in packaging marked reusable, follow its instructions and use an unused adhesive strip where applicable. Confirm that it is suitable for your actual return and service.</p><div className="service-actions"><ExternalLink href="https://www.fedex.com/en-us/shipping/packing/supplies/sustainable-packaging.html" className="brand-button brand-button-outline">Explore reusable packaging</ExternalLink><Link to="/store" className="service-text-link">Build a local supplies list <ArrowRight size={15} aria-hidden="true" /></Link></div></div></section>
+        <section className="service-section service-panel"><h2>Need help with a real shipment?</h2><p className="service-panel-intro mt-4">Use official FedEx support for eligibility, case status, and current filing deadlines. This project cannot investigate a package or issue compensation.</p><div className="service-actions"><ExternalLink href="https://www.fedex.com/en-us/customer-support/claims.html">Official claims information</ExternalLink><Link to="/support?topic=returns" className="service-text-link">Browse local return help <ArrowRight size={15} aria-hidden="true" /></Link></div></section>
       </div>
     </div>
   );

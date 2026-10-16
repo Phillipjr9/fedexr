@@ -1,276 +1,160 @@
-import { motion } from 'framer-motion';
-import { Printer, FileText, Image, PenTool, Upload, CheckCircle, ChevronRight, Palette, Ruler, Truck } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import FadeInOnScroll from '@/components/animations/FadeInOnScroll';
-import ShipmentWizard from '@/components/wizard/ShipmentWizard';
+import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowRight, Download, FileText, Upload } from 'lucide-react';
+import BrandImage from '@/components/BrandImage';
+import { ServiceNotice, ExternalLink, ServiceHero } from '@/components/ServiceLayout';
+import { siteImages } from '@/lib/siteAssets';
 
-const printProducts = [
-  {
-    icon: FileText,
-    title: 'Business Cards',
-    description: 'Professional cards in various finishes',
-    startingPrice: '$19.99',
-  },
-  {
-    icon: Image,
-    title: 'Posters & Banners',
-    description: 'Large format prints for any occasion',
-    startingPrice: '$24.99',
-  },
-  {
-    icon: Printer,
-    title: 'Brochures & Flyers',
-    description: 'Marketing materials that stand out',
-    startingPrice: '$49.99',
-  },
-  {
-    icon: PenTool,
-    title: 'Custom Signs',
-    description: 'Indoor and outdoor signage solutions',
-    startingPrice: '$34.99',
-  },
-];
+const products = [
+  { id: 'business-cards', name: 'Business cards', description: 'Make your next introduction count with a business card that reflects your brand.', image: siteImages.printBusinessCards, url: 'https://www.office.fedex.com/default/business-cards' },
+  { id: 'posters', name: 'Posters', description: 'Bring your message to a larger canvas. Review sizes and finishing options online.', image: siteImages.printPosters, url: 'https://www.office.fedex.com/default/posters' },
+  { id: 'marketing', name: 'Marketing materials', description: 'Plan brochures, flyers, and other printed materials for your business.', image: siteImages.printMarketing, url: 'https://www.office.fedex.com/default/all-print-products.html' },
+  { id: 'invitations', name: 'Cards & invitations', description: 'Add a personal touch to celebrations, greetings, and special occasions.', image: siteImages.printInvitations, url: 'https://www.office.fedex.com/default/cards-invitations-photo-gifts' },
+] as const;
 
-const designServices = [
-  {
-    title: 'Professional Design',
-    description: 'Our design experts can create custom artwork for your business needs.',
-    features: ['Logo design', 'Brand identity', 'Marketing materials', 'Custom illustrations'],
-  },
-  {
-    title: 'DIY Templates',
-    description: 'Choose from thousands of professionally designed templates.',
-    features: ['Easy online editor', 'Customizable layouts', 'Industry-specific designs', 'Instant previews'],
-  },
-];
-
-const printProcess = [
-  { step: 1, title: 'Upload or Design', description: 'Upload your file or use our design tools', icon: Upload },
-  { step: 2, title: 'Customize', description: 'Choose size, paper, and finishing options', icon: Palette },
-  { step: 3, title: 'Review', description: 'Preview your design before printing', icon: Ruler },
-  { step: 4, title: 'Print & Deliver', description: 'We print and ship to your door', icon: Truck },
-];
+type ProductId = typeof products[number]['id'];
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
 export default function DesignPrintPage() {
+  const [params] = useSearchParams();
+  const requestedProduct = params.get('product') || '';
+  const defaultProduct = products.find((product) => product.id === requestedProduct)?.id || 'business-cards';
+  // A new product URL takes precedence without an effect that overwrites user input.
+  const [selection, setSelection] = useState<{ source: string; id: ProductId }>({ source: requestedProduct, id: defaultProduct });
+  const productId = selection.source === requestedProduct ? selection.id : defaultProduct;
+  const product = products.find((item) => item.id === productId)!;
+  const [quantity, setQuantity] = useState('100');
+  const [color, setColor] = useState('Full color');
+  const [sides, setSides] = useState('Single sided');
+  const [notes, setNotes] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState('');
+  const [quantityError, setQuantityError] = useState('');
+  const [downloaded, setDownloaded] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+  const productRef = useRef<HTMLSelectElement>(null);
+  const quantityRef = useRef<HTMLInputElement>(null);
+  const plannerRef = useRef<HTMLElement>(null);
+  const signature = JSON.stringify([productId, quantity, color, sides, notes, file?.name, file?.size]);
+
+  function planProduct(id: ProductId) {
+    setSelection({ source: requestedProduct, id });
+    plannerRef.current?.scrollIntoView({ block: 'start' });
+    productRef.current?.focus({ preventScroll: true });
+  }
+
+  function chooseFile(event: ChangeEvent<HTMLInputElement>) {
+    const nextFile = event.target.files?.[0];
+    if (!nextFile) return;
+    setDownloaded('');
+    const validName = /\.(pdf|png|jpe?g)$/i.test(nextFile.name);
+    const validType = !nextFile.type || ['application/pdf', 'image/png', 'image/jpeg'].includes(nextFile.type);
+    if (!validName || !validType || nextFile.size === 0 || nextFile.size > MAX_FILE_SIZE) {
+      setFile(null);
+      setFileError('Choose a non-empty PDF, JPG, or PNG file up to 20 MB.');
+      event.target.value = '';
+      return;
+    }
+    setFile(nextFile);
+    setFileError('');
+  }
+
+  function clearFile() {
+    setFile(null);
+    setFileError('');
+    setDownloaded('');
+    if (fileRef.current) fileRef.current.value = '';
+  }
+
+  function downloadBrief(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const amount = Number(quantity);
+    if (!Number.isInteger(amount) || amount < 1 || amount > 10000) {
+      setQuantityError('Enter a whole-number desired quantity from 1 to 10,000.');
+      quantityRef.current?.focus();
+      return;
+    }
+    setQuantityError('');
+    if (fileError) { fileRef.current?.focus(); return; }
+    const text = [
+      'PRINT PROJECT BRIEF',
+      'Independent preview — NOT a print order or price quote.',
+      '',
+      `Product: ${product.name}`,
+      `Desired quantity: ${amount}`,
+      `Color preference: ${color}`,
+      `Sides preference: ${sides}`,
+      `Reference file: ${file ? `${file.name} (${file.size} bytes)` : 'None selected'}`,
+      '',
+      `Notes: ${notes.trim() || 'None'}`,
+      '',
+      `Official product page: ${product.url}`,
+      'Confirm actual sizes, quantities, options, prices, and availability on the official site.',
+      'No file contents have been uploaded or transferred. Re-select your artwork on FedEx Office to place an order.',
+    ].join('\n');
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `print-${productId}-brief.txt`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setDownloaded(signature);
+  }
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-fedex-purple to-fedex-purple-dark py-16 md:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <h1 className="text-4xl md:text-5xl font-light text-white mb-6">
-                Design & Print
-              </h1>
-              <p className="text-lg text-white/80 mb-8">
-                Create professional marketing materials, business cards, signs, and more. 
-                Design online or upload your files for high-quality printing.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Button className="bg-fedex-orange hover:bg-fedex-orange-dark text-white font-semibold uppercase tracking-wide px-8 py-6">
-                  Start Designing
-                </Button>
-                <Button variant="outline" className="border-white text-white hover:bg-white/10 font-semibold uppercase tracking-wide px-8 py-6">
-                  Upload File
-                </Button>
+    <div className="service-page">
+      <ServiceHero eyebrow="Design & Print" title="Bring your ideas to life" description="From a memorable business card to a bold poster, explore real FedEx Office print products and prepare a brief for your next project." image={siteImages.officePrinting}>
+        <button type="button" className="brand-button brand-button-orange" onClick={() => planProduct(productId)}>Plan a print project</button>
+        <button type="button" className="service-text-link" onClick={() => { plannerRef.current?.scrollIntoView({ block: 'start' }); fileRef.current?.click(); }}>Choose your file <Upload size={16} aria-hidden="true" /></button>
+      </ServiceHero>
+      <div className="site-container">
+        <section className="service-section" aria-labelledby="print-products-title">
+          <div className="service-section-heading"><div><h2 id="print-products-title">Make something that stands out</h2><p>Choose a product to start your plan. Actual print options and pricing are confirmed on FedEx Office.</p></div><ExternalLink href="https://www.office.fedex.com/default/all-print-products.html">Browse all official print products</ExternalLink></div>
+          <div className="service-card-grid service-product-grid">
+            {products.map((item) => <article key={item.id} className="service-card"><BrandImage image={item.image} className="service-card-image" /><div className="service-card-content"><h3>{item.name}</h3><p>{item.description}</p><button type="button" className="service-text-link" onClick={() => planProduct(item.id)} aria-label={`Plan ${item.name.toLowerCase()}`}>Plan this project <ArrowRight size={15} aria-hidden="true" /></button></div></article>)}
+          </div>
+        </section>
+
+        <section id="print-project" ref={plannerRef} className="service-section service-panel" aria-labelledby="print-plan-title">
+          <h2 id="print-plan-title">Prepare your print project</h2>
+          <p className="service-panel-intro">Create a downloadable text brief with your preferences and optional file information.</p>
+          <ServiceNotice>This planner stays in your browser tab. Files are not uploaded or sent to FedEx. A brief is not an order, artwork preview, or price quote. Use the official product page to check requirements, re-select your file, and place an order.</ServiceNotice>
+          <div className="print-planner mt-7">
+            <form onSubmit={downloadBrief} noValidate>
+              <div className="service-form-grid">
+                <div className="service-field service-field-wide"><label htmlFor="print-product">Print product</label><select id="print-product" ref={productRef} value={productId} onChange={(event) => setSelection({ source: requestedProduct, id: event.target.value as ProductId })}>{products.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></div>
+                <div className="service-field"><label htmlFor="print-quantity">Desired quantity</label><input id="print-quantity" ref={quantityRef} type="number" min="1" max="10000" step="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} required aria-invalid={Boolean(quantityError)} aria-describedby={quantityError ? 'print-quantity-error' : 'print-quantity-help'} /><small id="print-quantity-help">Actual minimums vary by product.</small>{quantityError && <span id="print-quantity-error" role="alert" className="service-field-error">{quantityError}</span>}</div>
+                <div className="service-field"><label htmlFor="print-color">Color preference</label><select id="print-color" value={color} onChange={(event) => setColor(event.target.value)}><option>Full color</option><option>Black & white</option></select></div>
+                <div className="service-field service-field-wide"><label htmlFor="print-sides">Sides preference</label><select id="print-sides" value={sides} onChange={(event) => setSides(event.target.value)}><option>Single sided</option><option>Double sided</option></select><small>Available options are confirmed when ordering, not by this planner.</small></div>
+                <div className="service-field service-field-wide"><label htmlFor="print-notes">Project notes (optional)</label><textarea id="print-notes" rows={3} maxLength={1000} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Preferred size, paper, finishing, or other requirements" /></div>
               </div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="relative"
-            >
-              <img
-                src="/images/hero-shipping.jpg"
-                alt="Design and Print Services"
-                className="rounded-lg shadow-2xl"
-              />
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Print Products */}
-      <section className="py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeInOnScroll>
-            <h2 className="text-3xl md:text-4xl font-light text-gray-900 text-center mb-4">
-              Professional printing services
-            </h2>
-            <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-              From business cards to banners, we print everything you need to promote your business.
-            </p>
-          </FadeInOnScroll>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {printProducts.map((product, index) => (
-              <FadeInOnScroll key={product.title} delay={index * 0.1}>
-                <motion.div
-                  whileHover={{ y: -4 }}
-                  className="bg-white border border-gray-200 rounded-lg p-6 hover:border-fedex-purple hover:shadow-card transition-all cursor-pointer"
-                >
-                  <div className="w-14 h-14 bg-fedex-purple/10 rounded-full flex items-center justify-center mb-4">
-                    <product.icon className="h-7 w-7 text-fedex-purple" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{product.title}</h3>
-                  <p className="text-sm text-gray-600 mb-4">{product.description}</p>
-                  <p className="text-fedex-purple font-semibold">From {product.startingPrice}</p>
-                </motion.div>
-              </FadeInOnScroll>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Print Process */}
-      <section className="py-16 bg-fedex-gray">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeInOnScroll>
-            <h2 className="text-3xl md:text-4xl font-light text-gray-900 text-center mb-12">
-              How it works
-            </h2>
-          </FadeInOnScroll>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {printProcess.map((step, index) => (
-              <FadeInOnScroll key={step.step} delay={index * 0.1}>
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-fedex-purple rounded-full flex items-center justify-center">
-                    <step.icon className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="w-8 h-8 mx-auto -mt-12 mb-4 bg-fedex-orange rounded-full flex items-center justify-center text-white font-bold text-sm">
-                    {step.step}
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{step.title}</h3>
-                  <p className="text-sm text-gray-600">{step.description}</p>
-                </div>
-              </FadeInOnScroll>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Design Services */}
-      <section className="py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12">
-            {designServices.map((service, index) => (
-              <FadeInOnScroll key={service.title} delay={index * 0.1}>
-                <motion.div
-                  whileHover={{ y: -4 }}
-                  className="bg-white border border-gray-200 rounded-lg p-8 hover:shadow-card transition-all"
-                >
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">{service.title}</h3>
-                  <p className="text-gray-600 mb-6">{service.description}</p>
-                  <ul className="space-y-3 mb-8">
-                    {service.features.map((feature) => (
-                      <li key={feature} className="flex items-center text-gray-600">
-                        <CheckCircle className="h-5 w-5 text-fedex-purple mr-3 flex-shrink-0" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button className="bg-fedex-purple hover:bg-fedex-purple-dark text-white font-semibold uppercase tracking-wide px-8 py-6">
-                    Learn More
-                  </Button>
-                </motion.div>
-              </FadeInOnScroll>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Same-Day Services */}
-      <section className="py-16 bg-fedex-purple">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <FadeInOnScroll>
-              <h2 className="text-3xl md:text-4xl font-light text-white mb-6">
-                Need it today?
-              </h2>
-              <p className="text-lg text-white/80 mb-6">
-                Order by 2 PM for same-day pickup at select FedEx Office locations. 
-                Perfect for last-minute presentations, events, and emergencies.
-              </p>
-              <ul className="space-y-3 mb-8">
-                {[
-                  'Same-day printing available',
-                  'Pickup at your nearest location',
-                  'Professional quality guaranteed',
-                  'Wide range of products',
-                ].map((item) => (
-                  <li key={item} className="flex items-start text-white/80">
-                    <CheckCircle className="h-5 w-5 text-fedex-orange mr-3 flex-shrink-0 mt-0.5" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Button className="bg-fedex-orange hover:bg-fedex-orange-dark text-white font-semibold uppercase tracking-wide px-8 py-6">
-                Find a Location
-              </Button>
-            </FadeInOnScroll>
-            <FadeInOnScroll direction="left">
-              <div className="bg-white/10 rounded-lg p-8">
-                <h3 className="text-xl font-semibold text-white mb-6">Same-Day Products</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {[
-                    'Business Cards',
-                    'Flyers',
-                    'Posters',
-                    'Presentations',
-                    'Signs',
-                    'Banners',
-                    'Brochures',
-                    'Photo Prints',
-                  ].map((product) => (
-                    <div key={product} className="flex items-center text-white/80">
-                      <ChevronRight className="h-4 w-4 text-fedex-orange mr-2" />
-                      {product}
-                    </div>
-                  ))}
-                </div>
+              <div className="mt-6">
+                <label htmlFor="print-file" className="print-file-label"><Upload size={25} strokeWidth={1.5} aria-hidden="true" />Choose a PDF, JPG, or PNG (local only)</label>
+                <input id="print-file" ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" className="print-file-input" onChange={chooseFile} aria-invalid={Boolean(fileError)} aria-describedby={fileError ? 'print-file-error' : 'print-file-help'} />
+                <p id="print-file-help" className="service-form-help mt-3">Maximum 20 MB. Only filename, type, and size are checked; print readiness is not assessed.</p>
+                {file && <p className="print-file-info" role="status"><FileText size={20} aria-hidden="true" /><span>{file.name} · {(file.size / 1024).toFixed(1)} KB<br />Selected locally. Not uploaded.</span></p>}
+                {fileError && <p id="print-file-error" className="service-form-error" role="alert">{fileError}</p>}
+                {(file || fileError) && <button type="button" className="service-text-link mt-3" onClick={clearFile}>Clear selected file</button>}
               </div>
-            </FadeInOnScroll>
+              <div className="service-form-footer"><button type="submit" className="brand-button brand-button-outline"><Download size={17} aria-hidden="true" />Download project brief</button></div>
+              {downloaded === signature && <p role="status" className="service-form-help mt-4">Your project brief was downloaded. No order was placed and no file was uploaded.</p>}
+            </form>
+            <aside className="print-brief" aria-label="Print project summary">
+              <h3>Your project at a glance</h3>
+              <dl><dt>Product</dt><dd>{product.name}</dd><dt>Quantity</dt><dd>{quantity || 'Not specified'}</dd><dt>Color</dt><dd>{color}</dd><dt>Sides</dt><dd>{sides}</dd><dt>File</dt><dd>{file?.name || 'None selected'}</dd></dl>
+              <p>Ready to order? Open the official product page. Your file and preferences are not transferred automatically; enter them there to confirm production options and pricing.</p>
+              <ExternalLink href={product.url} className="brand-button brand-button-orange">Continue at FedEx Office</ExternalLink>
+              <div className="service-actions"><Link to="/support?topic=printing" className="service-text-link">Get printing help <ArrowRight size={16} aria-hidden="true" /></Link></div>
+            </aside>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA Section */}
-      <section className="py-16 md:py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <FadeInOnScroll>
-            <h2 className="text-3xl md:text-4xl font-light text-gray-900 mb-6">
-              Ready to get started?
-            </h2>
-            <p className="text-lg text-gray-600 mb-8">
-              Create an account to save your designs, track orders, and reorder with ease.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button className="bg-fedex-purple hover:bg-fedex-purple-dark text-white font-semibold uppercase tracking-wide px-8 py-6">
-                Create Account
-              </Button>
-              <Button variant="outline" className="border-fedex-purple text-fedex-purple hover:bg-fedex-purple/10 font-semibold uppercase tracking-wide px-8 py-6">
-                Browse Templates
-              </Button>
-            </div>
-          </FadeInOnScroll>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-export function CreateShipmentPage() {
-  return (
-    <div className="min-h-screen bg-fedex-gray py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-semibold text-gray-900 mb-8 text-center">Create a Shipment</h1>
-        <ShipmentWizard />
+        <section className="service-section service-feature" aria-labelledby="print-help-title">
+          <BrandImage image={siteImages.officeConsultation} />
+          <div className="service-feature-copy"><h2 id="print-help-title">Start online. Get help in person.</h2><p>Explore online design options, or visit a FedEx Office to discuss your project and review print materials. Confirm each location’s services and hours before visiting.</p><div className="service-actions"><ExternalLink href="https://www.office.fedex.com/default/custom-printing-solutions" className="brand-button brand-button-outline">Explore design &amp; print options</ExternalLink><Link to="/locations?type=office" className="service-text-link">Find a FedEx Office <ArrowRight size={16} aria-hidden="true" /></Link></div></div>
+        </section>
       </div>
     </div>
   );

@@ -1,43 +1,41 @@
 import AlertBanner from '@/components/AlertBanner';
+import TwoColumnSection from '@/components/TwoColumnSection';
 import HeroSection from '@/sections/HeroSection';
 import WhyShipSection from '@/sections/WhyShipSection';
-import DeliveryOptionsSection from '@/sections/DeliveryOptionsSection';
-import DeliveryManagerSection from '@/sections/DeliveryManagerSection';
-import AppleWatchSection from '@/sections/AppleWatchSection';
-import ComparisonSection from '@/sections/ComparisonSection';
+import ManageDeliveriesSection from '@/sections/ManageDeliveriesSection';
+import BusinessSolutionsSection from '@/sections/BusinessSolutionsSection';
 import BusinessAdvantageSection from '@/sections/BusinessAdvantageSection';
 import SustainabilitySection from '@/sections/SustainabilitySection';
-import RewardsSection from '@/sections/RewardsSection';
 import NoticesSection from '@/sections/NoticesSection';
+import { siteImages } from '@/lib/siteAssets';
 
 export default function HomePage() {
   return (
-    <>
+    <div className="home-page">
       <HeroSection />
-      
       <AlertBanner
-        message="US Supreme Court Tariff Update."
-        linkText="See how this may impact you"
-        linkHref="/support/tariffs"
+        message="Looking for IEEPA tariff refund updates?"
+        linkText="Access the customer portal."
+        linkHref="https://ieepa-refunds.fedex.com/"
       />
-      
       <WhyShipSection />
-      
-      <DeliveryOptionsSection />
-      
-      <DeliveryManagerSection />
-      
-      <AppleWatchSection />
-      
-      <ComparisonSection />
-      
+      <ManageDeliveriesSection />
+      <TwoColumnSection
+        title="Go global with confidence"
+        description="Your business doesn’t stop at the border. Find flexible international shipping solutions, explore delivery options, and get help preparing for your next opportunity."
+        ctaText="Explore shipping services"
+        ctaLink="/shipping"
+        secondaryCta={{ text: 'Get a quote', link: '/rate-calculator' }}
+        image={siteImages.international.src}
+        imageAlt={siteImages.international.alt}
+        imageWidth={siteImages.international.width}
+        imageHeight={siteImages.international.height}
+        imagePosition="left"
+      />
       <BusinessAdvantageSection />
-      
+      <BusinessSolutionsSection />
       <SustainabilitySection />
-      
-      <RewardsSection />
-      
       <NoticesSection />
-    </>
+    </div>
   );
 }

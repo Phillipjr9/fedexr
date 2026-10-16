@@ -1,300 +1,129 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Package, Truck, Clock, Globe, ChevronRight, Calculator, MapPin, CreditCard } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Link } from 'react-router-dom';
-import FadeInOnScroll from '@/components/animations/FadeInOnScroll';
-
-import { getDeliveryDate } from '@/lib/time';
-
-const shippingServices = [
-  {
-    id: 'sameday',
-    icon: Clock,
-    title: 'FedEx SameDay',
-    description: 'Delivery in hours for urgent shipments',
-  },
-  {
-    id: 'overnight',
-    icon: Truck,
-    title: 'FedEx Overnight',
-    description: 'Next-business-day delivery by 8 a.m.',
-  },
-  {
-    id: '2day',
-    icon: Package,
-    title: 'FedEx 2Day',
-    description: 'Delivery in 2 business days',
-  },
-  {
-    id: 'international',
-    icon: Globe,
-    title: 'FedEx International',
-    description: 'Shipping to over 220 countries',
-  },
-];
-
-const quickLinks = [
-  { icon: Calculator, label: 'Get a Quote', href: '/rate-calculator' },
-  { icon: Package, label: 'Create a Shipment', href: '/shipping/create' },
-  { icon: MapPin, label: 'Schedule a Pickup', href: '/shipping/pickup' },
-  { icon: CreditCard, label: 'View Rates', href: '/rate-calculator' },
-];
+import { useRef, useState, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { CalendarDays, MapPin, Package, Truck, RotateCcw, ArrowRight } from 'lucide-react';
+import BrandImage from '@/components/BrandImage';
+import { ServiceNotice, ExternalLink, ServiceHero } from '@/components/ServiceLayout';
+import { siteImages } from '@/lib/siteAssets';
+import { isUSZip, localDate, quoteParams } from '@/lib/shipping';
 
 export default function ShippingPage() {
+  const navigate = useNavigate();
   const [fromZip, setFromZip] = useState('');
   const [toZip, setToZip] = useState('');
-  const [weight, setWeight] = useState('');
+  const [weight, setWeight] = useState('1');
+  const [error, setError] = useState('');
+  const fromRef = useRef<HTMLInputElement>(null);
+  const toRef = useRef<HTMLInputElement>(null);
+  const weightRef = useRef<HTMLInputElement>(null);
 
-  const handleGetRates = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert(`Getting rates from ${fromZip} to ${toZip} for ${weight} lbs`);
-  };
+  function handleQuote(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!isUSZip(fromZip)) {
+      setError('Enter a valid From ZIP code (12345 or 12345-6789).');
+      fromRef.current?.focus();
+      return;
+    }
+    if (!isUSZip(toZip)) {
+      setError('Enter a valid To ZIP code (12345 or 12345-6789).');
+      toRef.current?.focus();
+      return;
+    }
+    if (!Number.isFinite(Number(weight)) || Number(weight) < 0.1 || Number(weight) > 150) {
+      setError('For this sample, enter a package weight from 0.1 to 150 lb.');
+      weightRef.current?.focus();
+      return;
+    }
+    const params = quoteParams({ from: fromZip, to: toZip, weight, length: '', width: '', height: '', shipDate: localDate() });
+    navigate(`/rate-calculator?${params}`);
+  }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <section className="bg-fedex-purple py-16 md:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <h1 className="text-4xl md:text-5xl font-light text-white mb-6">
-                Ship with confidence
-              </h1>
-              <p className="text-lg text-white/80 mb-8">
-                From envelopes to freight, we have the right shipping solution for every need. 
-                Get reliable delivery with real-time tracking.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Link to="/rate-calculator">
-                  <Button className="bg-fedex-orange hover:bg-fedex-orange-dark text-white font-semibold uppercase tracking-wide px-8 py-6">
-                    Get a Quote
-                  </Button>
-                </Link>
-                <Link to="/shipping/create">
-                  <Button variant="outline" className="border-white text-white hover:bg-white/10 font-semibold uppercase tracking-wide px-8 py-6">
-                    Ship Now
-                  </Button>
-                </Link>
+    <div className="service-page">
+      <ServiceHero
+        eyebrow="Shipping"
+        title="Shipping services"
+        description="From everyday packages to your next big opportunity, find a shipping option that fits. Prepare a shipment, compare options, and keep things moving."
+        image={siteImages.officePacking}
+      >
+        <Link to="/shipping/create" className="brand-button brand-button-orange">Create a shipment</Link>
+        <Link to="/rate-calculator" className="service-text-link">Compare shipping options <ArrowRight size={16} aria-hidden="true" /></Link>
+      </ServiceHero>
+
+      <div className="site-container">
+        <nav className="service-quick-links" aria-label="Shipping tools">
+          <Link to="/rate-calculator"><Package size={29} strokeWidth={1.5} aria-hidden="true" />Rates &amp; delivery times</Link>
+          <Link to="/shipping/pickup"><CalendarDays size={29} strokeWidth={1.5} aria-hidden="true" />Schedule a pickup</Link>
+          <Link to="/locations"><MapPin size={29} strokeWidth={1.5} aria-hidden="true" />Find a drop-off location</Link>
+          <Link to="/returns"><RotateCcw size={29} strokeWidth={1.5} aria-hidden="true" />Return a package</Link>
+        </nav>
+
+        <section className="service-section service-panel" aria-labelledby="quick-quote-title">
+          <h2 id="quick-quote-title">Where is your package going?</h2>
+          <p className="service-panel-intro">Start with your U.S. ZIP codes and package weight to compare sample shipping estimates.</p>
+          <form onSubmit={handleQuote} noValidate>
+            <div className="service-form-grid">
+              <div className="service-field">
+                <label htmlFor="shipping-from">From ZIP code</label>
+                <input id="shipping-from" ref={fromRef} value={fromZip} onChange={(event) => setFromZip(event.target.value)} placeholder="e.g., 10003" inputMode="numeric" autoComplete="off" maxLength={10} required aria-invalid={Boolean(error) && !isUSZip(fromZip)} aria-describedby={error ? 'shipping-quote-error' : undefined} />
               </div>
-            </motion.div>
-
-            {/* Quick Rate Calculator */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="bg-white rounded-lg shadow-xl p-6 md:p-8"
-            >
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Quick Rate Calculator
-              </h2>
-              <form onSubmit={handleGetRates} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      From ZIP
-                    </label>
-                    <Input
-                      type="text"
-                      placeholder="Enter ZIP"
-                      value={fromZip}
-                      onChange={(e) => setFromZip(e.target.value)}
-                      className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      To ZIP
-                    </label>
-                    <Input
-                      type="text"
-                      placeholder="Enter ZIP"
-                      value={toZip}
-                      onChange={(e) => setToZip(e.target.value)}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Package Weight (lbs)
-                  </label>
-                  <Input
-                    type="number"
-                    placeholder="Enter weight"
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-fedex-orange hover:bg-fedex-orange-dark text-white font-semibold uppercase tracking-wide py-6"
-                >
-                  Get Rates
-                  <ChevronRight className="ml-2 h-5 w-5" />
-                </Button>
-              </form>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Links */}
-      <section className="py-12 bg-fedex-gray">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {quickLinks.map((link, index) => (
-              <FadeInOnScroll key={link.label} delay={index * 0.1}>
-                <Link to={link.href}>
-                  <motion.div
-                    whileHover={{ y: -4 }}
-                    className="bg-white rounded-lg shadow-card p-6 text-center cursor-pointer hover:shadow-card-hover transition-shadow"
-                  >
-                    <div className="w-12 h-12 mx-auto mb-4 bg-fedex-purple/10 rounded-full flex items-center justify-center">
-                      <link.icon className="h-6 w-6 text-fedex-purple" />
-                    </div>
-                    <span className="text-sm font-semibold text-gray-900">{link.label}</span>
-                  </motion.div>
-                </Link>
-              </FadeInOnScroll>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Shipping Services */}
-      <section className="py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeInOnScroll>
-            <h2 className="text-3xl md:text-4xl font-light text-gray-900 text-center mb-12">
-              Choose your shipping service
-            </h2>
-          </FadeInOnScroll>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {shippingServices.map((service, index) => (
-              <FadeInOnScroll key={service.title} delay={index * 0.1}>
-                <motion.div
-                  whileHover={{ y: -4 }}
-                  className="bg-white border border-gray-200 rounded-lg p-6 hover:border-fedex-purple hover:shadow-card transition-all cursor-pointer"
-                >
-                  <div className="w-14 h-14 bg-fedex-purple/10 rounded-full flex items-center justify-center mb-4">
-                    <service.icon className="h-7 w-7 text-fedex-purple" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{service.title}</h3>
-                  <p className="text-sm text-gray-600 mb-4">{service.description}</p>
-                  <div className="flex items-center text-fedex-link font-medium text-sm">
-                    <Clock className="h-4 w-4 mr-2" />
-                    {getDeliveryDate(service.id)}
-                  </div>
-                </motion.div>
-              </FadeInOnScroll>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FedEx One Rate */}
-      <section className="py-16 bg-fedex-purple">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <FadeInOnScroll>
-              <h2 className="text-3xl md:text-4xl font-light text-white mb-6">
-                FedEx One Rate®
-              </h2>
-              <p className="text-lg text-white/80 mb-6">
-                Simple, flat-rate shipping for packages up to 50 lbs. No weighing or calculating 
-                needed. Just pick your packaging and ship.
-              </p>
-              <ul className="space-y-3 mb-8">
-                {[
-                  'Flat rate pricing based on packaging type',
-                  'Free packaging available',
-                  'Delivered in 1-3 business days',
-                  'No surprise fees',
-                ].map((item) => (
-                  <li key={item} className="flex items-start text-white/80">
-                    <ChevronRight className="h-5 w-5 text-fedex-orange mr-2 flex-shrink-0 mt-0.5" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Link to="/rate-calculator">
-                <Button className="bg-fedex-orange hover:bg-fedex-orange-dark text-white font-semibold uppercase tracking-wide px-8 py-6">
-                  Learn More
-                </Button>
-              </Link>
-            </FadeInOnScroll>
-            <FadeInOnScroll direction="left">
-              <div className="bg-white/10 rounded-lg p-8">
-                <div className="grid grid-cols-2 gap-4">
-                  {[
-                    { size: 'Small', price: '$9.50' },
-                    { size: 'Medium', price: '$12.35' },
-                    { size: 'Large', price: '$16.80' },
-                    { size: 'Extra Large', price: '$24.55' },
-                  ].map((box) => (
-                    <div key={box.size} className="bg-white rounded-lg p-4 text-center">
-                      <p className="text-sm text-gray-500 mb-1">{box.size}</p>
-                      <p className="text-2xl font-bold text-fedex-purple">{box.price}</p>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-center text-white/60 text-sm mt-4">
-                  Starting prices for FedEx One Rate
-                </p>
+              <div className="service-field">
+                <label htmlFor="shipping-to">To ZIP code</label>
+                <input id="shipping-to" ref={toRef} value={toZip} onChange={(event) => setToZip(event.target.value)} placeholder="e.g., 90001" inputMode="numeric" autoComplete="off" maxLength={10} required aria-invalid={Boolean(error) && !isUSZip(toZip)} aria-describedby={error ? 'shipping-quote-error' : undefined} />
               </div>
-            </FadeInOnScroll>
-          </div>
-        </div>
-      </section>
+              <div className="service-field">
+                <label htmlFor="shipping-weight">Package weight (lb)</label>
+                <input id="shipping-weight" ref={weightRef} value={weight} onChange={(event) => setWeight(event.target.value)} type="number" min="0.1" max="150" step="0.1" required aria-invalid={Boolean(error) && (!Number.isFinite(Number(weight)) || Number(weight) < 0.1 || Number(weight) > 150)} aria-describedby={error ? 'shipping-quote-error' : undefined} />
+              </div>
+            </div>
+            {error && <p id="shipping-quote-error" role="alert" className="service-form-error">{error}</p>}
+            <div className="service-form-footer">
+              <button type="submit" className="brand-button brand-button-orange">Get rates <ArrowRight size={17} aria-hidden="true" /></button>
+              <p>Need a real shipping quote? <ExternalLink href="https://www.fedex.com/en-us/online/rating.html">Get live rates on fedex.com</ExternalLink></p>
+            </div>
+          </form>
+          <ServiceNotice>Estimates in this project are illustrative, not live FedEx prices. Nothing is booked or charged here.</ServiceNotice>
+        </section>
 
-      {/* Packaging Supplies */}
-      <section className="py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <FadeInOnScroll>
-              <img
-                src="/images/sustainability.jpg"
-                alt="FedEx Packaging Supplies"
-                className="rounded-lg shadow-lg"
-              />
-            </FadeInOnScroll>
-            <FadeInOnScroll direction="left">
-              <h2 className="text-3xl md:text-4xl font-light text-gray-900 mb-6">
-                Free packaging supplies
-              </h2>
-              <p className="text-lg text-gray-600 mb-6">
-                Order free FedEx Express packaging and supplies to ensure your shipments 
-                arrive safely and on time.
-              </p>
-              <ul className="space-y-3 mb-8">
-                {[
-                  'Boxes, envelopes, and tubes',
-                  'Packing materials and tape',
-                  'Labels and documentation pouches',
-                  'Temperature-controlled packaging',
-                ].map((item) => (
-                  <li key={item} className="flex items-start text-gray-600">
-                    <ChevronRight className="h-5 w-5 text-fedex-purple mr-2 flex-shrink-0 mt-0.5" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Button className="bg-fedex-purple hover:bg-fedex-purple-dark text-white font-semibold uppercase tracking-wide px-8 py-6">
-                Order Supplies
-              </Button>
-            </FadeInOnScroll>
+        <section className="service-section" aria-labelledby="shipping-options-title">
+          <div className="service-section-heading">
+            <div><h2 id="shipping-options-title">Find your shipping option</h2><p>Explore everyday, time-sensitive, and international shipping.</p></div>
           </div>
-        </div>
-      </section>
+          <div className="service-card-grid">
+            <article className="service-card">
+              <BrandImage image={siteImages.ground} className="service-card-image" />
+              <div className="service-card-content"><h3>Ground shipping</h3><p>Compare a ground-shipping option for your less time-sensitive packages.</p><Link to="/rate-calculator?service=ground" className="service-text-link">Explore FedEx Ground <ArrowRight size={16} aria-hidden="true" /></Link></div>
+            </article>
+            <article className="service-card">
+              <BrandImage image={siteImages.professional} className="service-card-image" />
+              <div className="service-card-content"><h3>Express shipping</h3><p>Review overnight and two-day options when timing matters. Availability depends on your shipment.</p><Link to="/rate-calculator?service=priority" className="service-text-link">Compare express options <ArrowRight size={16} aria-hidden="true" /></Link></div>
+            </article>
+            <article className="service-card">
+              <BrandImage image={siteImages.international} className="service-card-image" />
+              <div className="service-card-content"><h3>International shipping</h3><p>Find the official resources you need for shipping across borders, including customs and documentation.</p><ExternalLink href="https://www.fedex.com/en-us/shipping/international.html">Explore international shipping</ExternalLink></div>
+            </article>
+          </div>
+        </section>
+
+        <section className="service-section service-feature" aria-labelledby="packaging-title">
+          <BrandImage image={siteImages.packaging} />
+          <div className="service-feature-copy">
+            <h2 id="packaging-title">The right packaging makes a difference</h2>
+            <p>FedEx offers complimentary packaging for qualifying express services with an eligible account. Other boxes and packing supplies may have a cost. Check the official requirements before ordering.</p>
+            <div className="service-actions">
+              <ExternalLink href="https://www.fedex.com/en-us/shipping/packing/supplies.html" className="brand-button brand-button-outline">Explore packing supplies</ExternalLink>
+              <Link to="/store" className="service-text-link">Try the supplies planner</Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="service-section service-panel" aria-labelledby="one-rate-title">
+          <div className="service-section-heading">
+            <div><h2 id="one-rate-title">Prefer flat-rate shipping?</h2><p>Explore FedEx One Rate packaging, eligible services, and current pricing on the official website. No sample prices are presented as real offers here.</p></div>
+            <Truck size={42} color="#4d148c" strokeWidth={1.3} aria-hidden="true" />
+          </div>
+          <ExternalLink href="https://www.fedex.com/en-us/shipping/one-rate.html" className="brand-button brand-button-outline">Explore FedEx One Rate</ExternalLink>
+        </section>
+      </div>
     </div>
   );
 }

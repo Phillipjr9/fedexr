@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
-import FadeInOnScroll from '@/components/animations/FadeInOnScroll';
+import BrandImage from '@/components/BrandImage';
+import { siteImages } from '@/lib/siteAssets';
 
 const features = [
   {
     title: 'Innovative solutions for reliability & speed',
-    description: "Whether it's across states or worldwide, we prioritize the secure and swift arrival of your shipments.",
+    description: 'Whether it’s across states or worldwide, we prioritize the secure and swift arrival of your shipments.',
   },
   {
     title: 'Premium shipping at professional rates',
@@ -13,77 +13,34 @@ const features = [
   },
   {
     title: 'We ship everywhere*',
-    description: 'From major cities to remote locations, your goods can reach worldwide.',
+    description: 'From major cities to remote destinations, our global network helps you reach customers around the world.',
   },
   {
-    title: 'Wallet-friendly shipping with no weighing',
-    description: 'FedEx can ship your packages for less than the Post Office. With FedEx One Rate®, you get flat-rate, 2-day shipping for packages up to 50 lbs.',
+    title: 'Flat-rate shipping. Fewer surprises.',
+    description: 'FedEx One Rate® offers predictable flat-rate overnight and 2-day shipping, so you can focus on what comes next.**',
   },
 ];
 
 export default function WhyShipSection() {
   return (
-    <section className="py-16 md:py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
-          <div>
-            <FadeInOnScroll>
-              <h2 className="text-3xl md:text-4xl font-light text-gray-900 mb-10">
-                Why ship with FedEx?
-              </h2>
-            </FadeInOnScroll>
-
-            <div className="grid sm:grid-cols-2 gap-8">
-              {features.map((feature, index) => (
-                <FadeInOnScroll key={feature.title} delay={index * 0.1}>
-                  <div className="group">
-                    <h3 className="text-lg font-semibold text-fedex-purple mb-2">
-                      {feature.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {feature.description}
-                    </p>
-                  </div>
-                </FadeInOnScroll>
-              ))}
+    <section className="site-container why-ship-section" aria-labelledby="why-ship-title">
+      <div className="why-ship-copy">
+        <h2 id="why-ship-title">Why ship with FedEx?</h2>
+        <div className="why-ship-features">
+          {features.map((feature) => (
+            <div key={feature.title}>
+              <h3>{feature.title}</h3>
+              <p>{feature.description}</p>
             </div>
-
-            <FadeInOnScroll delay={0.4}>
-              <div className="mt-8">
-                <Link
-                  to="/shipping"
-                  className="inline-flex items-center text-fedex-link font-semibold text-sm uppercase tracking-wide hover:text-fedex-link-dark transition-colors"
-                >
-                  Start shipping now
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-                <p className="mt-4 text-xs text-gray-500">
-                  *FedEx doesn&apos;t ship anywhere sanctioned by the U.S.
-                  <br />
-                  **Visit the{' '}
-                  <Link to="/rate-calculator" className="text-fedex-link underline hover:text-fedex-link-dark">
-                    One Rate
-                  </Link>{' '}
-                  page for details.
-                </p>
-              </div>
-            </FadeInOnScroll>
-          </div>
-
-          {/* Right Image */}
-          <FadeInOnScroll direction="left" delay={0.2}>
-            <div className="relative">
-              <img
-                src="/images/fedex-employee.jpg"
-                alt="FedEx delivery professional"
-                className="w-full h-auto rounded-lg shadow-lg object-cover"
-                loading="lazy"
-              />
-            </div>
-          </FadeInOnScroll>
+          ))}
         </div>
+        <p className="why-ship-footnote">
+          *FedEx doesn’t ship anywhere sanctioned by the U.S.<br />
+          **Visit the <a href="https://www.fedex.com/en-us/shipping/one-rate.html" target="_blank" rel="noopener noreferrer">FedEx One Rate page<span className="sr-only"> (opens in a new tab)</span></a> for details.
+        </p>
+        <Link to="/shipping/create" className="brand-button brand-button-outline">Start shipping now</Link>
       </div>
+      <BrandImage image={siteImages.professional} className="why-ship-image" />
     </section>
   );
 }

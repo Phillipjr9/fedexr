@@ -1,3 +1,35 @@
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/fonts/roboto-latin-300-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/roboto-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/roboto-latin-500-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/roboto-latin-700-normal.woff2') format('woff2');
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -71,7 +103,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Roboto', Arial, Helvetica, sans-serif;
   }
 }
 
@@ -84,6 +116,56 @@
 /* FedEx Custom Styles */
 html {
   scroll-behavior: smooth;
+}
+
+/* Dropdown selects: one consistent, finished treatment everywhere instead of
+   the plain OS control — custom purple chevron, soft border and shadow,
+   roomier padding, and clear hover/focus/disabled states. */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234d148c' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 15px;
+  border: 1px solid #8a8a8a;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.07);
+  color: #333;
+  cursor: pointer;
+  font: inherit;
+  padding: 10px 38px 10px 12px;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+select:hover:not(:disabled) {
+  border-color: #4d148c;
+  background-color: #fdfaff;
+  box-shadow: 0 1px 3px rgb(77 20 140 / 0.16);
+}
+select:focus-visible {
+  border-color: #4d148c;
+  outline: 2px solid #0073ad;
+  outline-offset: 2px;
+}
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none;
+}
+select[aria-invalid='true'] {
+  border-color: #b3261e;
+}
+select option {
+  background: #fff;
+  color: #222;
+}
+select optgroup {
+  color: #4d148c;
+  font-weight: 700;
 }
 
 /* Link underline animation */
@@ -110,6 +192,7 @@ html {
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   *,
   *::before,
   *::after {

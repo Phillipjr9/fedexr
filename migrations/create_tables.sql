@@ -37,7 +37,9 @@ CREATE TABLE IF NOT EXISTS shipment_events (
   details TEXT
 );
 
--- Tracking images (image stored as bytea). For production, prefer object storage and store URLs.
+-- Historical tracking-image archive. The secured API now uses fedexr_tracking_images;
+-- review the separate images:plan / images:migrate upgrade instead of relying on request-time DDL.
+-- At larger scale, prefer private object storage with server-checked access.
 CREATE TABLE IF NOT EXISTS tracking_images (
   id BIGSERIAL PRIMARY KEY,
   tracking_number TEXT NOT NULL,

@@ -1,259 +1,138 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Bot, Minimize2 } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { MessageCircle, X, Send, Bot, Minimize2, ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { OPEN_ASSISTANT_EVENT } from '@/lib/chat';
+
+interface MessageLink {
+  label: string;
+  href: string;
+}
 
 interface Message {
   id: string;
   text: string;
+  links?: MessageLink[];
   sender: 'user' | 'bot';
   timestamp: Date;
 }
 
-const initialMessages: Message[] = [
+function initialMessages(): Message[] {
+  return [{
+    id: 'welcome',
+    text: 'Hello! This is an automated shipping guide. I can point you to local tools and official FedEx resources. Please do not enter account, payment, or personal information.',
+    sender: 'bot', timestamp: new Date(),
+  }];
+}
+
+const quickReplies = ['Track my package', 'Shipping rates', 'Schedule a pickup', 'Find a location', 'File a claim', 'Talk to an agent'];
+
+const responses: { keys: string[]; text: string; links: MessageLink[] }[] = [
   {
-    id: '1',
-    text: 'Hello! I\'m your FedEx virtual assistant. How can I help you today?',
-    sender: 'bot',
-    timestamp: new Date(),
+    keys: ['agent', 'human', 'representative'],
+    text: 'No live agents are connected to this assistant. For help with a real shipment, contact FedEx through its official support website.',
+    links: [{ label: 'Contact real FedEx support', href: 'https://www.fedex.com/en-us/customer-support.html' }],
+  },
+  {
+    keys: ['claim', 'damage', 'lost'],
+    text: 'This project cannot submit claims or investigate shipments. Use the official claims page to check eligibility, documents, and deadlines.',
+    links: [{ label: 'Official FedEx claims', href: 'https://www.fedex.com/en-us/customer-support/claims.html' }],
+  },
+  {
+    keys: ['track', 'package status'],
+    text: 'The local tracking page is a simulation. For an actual package, use the official FedEx tracking page.',
+    links: [{ label: 'View sample tracking', href: '/tracking' }, { label: 'Track a real shipment', href: 'https://www.fedex.com/en-us/tracking.html' }],
+  },
+  {
+    keys: ['rate', 'quote', 'cost', 'price'],
+    text: 'Compare illustrative estimates in the sample calculator. It does not provide live carrier prices or guaranteed delivery dates.',
+    links: [{ label: 'Open sample rate calculator', href: '/rate-calculator' }, { label: 'Get a live FedEx quote', href: 'https://www.fedex.com/en-us/online/rating.html' }],
+  },
+  {
+    keys: ['pickup', 'pick up', 'collection'],
+    text: 'Prepare a pickup plan here, then complete the reservation on fedex.com. No pickup or driver is booked by this sample.',
+    links: [{ label: 'Prepare a pickup plan', href: '/shipping/pickup' }],
+  },
+  {
+    keys: ['location', 'store', 'nearby', 'zip'],
+    text: 'Our locations page contains verified New York examples, not live nearest-location results. The official locator covers other areas and current services.',
+    links: [{ label: 'Browse saved New York locations', href: '/locations' }, { label: 'Open the official locator', href: 'https://local.fedex.com/en/search' }],
+  },
+  {
+    keys: ['print', 'design', 'poster', 'business card'],
+    text: 'Choose a product and prepare a local print brief. Files are not uploaded, and no order is placed until you use the official FedEx Office website.',
+    links: [{ label: 'Prepare a print project', href: '/design-print' }],
   },
 ];
 
-const quickReplies = [
-  'Track my package',
-  'Shipping rates',
-  'Schedule a pickup',
-  'Find a location',
-  'File a claim',
-  'Talk to an agent',
-];
-
-const botResponses: Record<string, string> = {
-  'track my package': 'I can help you track your package. Please enter your tracking number in the field below, or visit our tracking page.',
-  'shipping rates': 'You can get instant shipping rates using our rate calculator. Would you like me to take you there?',
-  'schedule a pickup': 'You can schedule a pickup online or by calling 1-800-Go-FedEx. Would you like to schedule now?',
-  'find a location': 'I can help you find the nearest FedEx location. Please share your ZIP code or city.',
-  'file a claim': 'To file a claim, you\'ll need your tracking number and photos of any damage. Would you like to start the claims process?',
-  'talk to an agent': 'I\'m connecting you to a live agent. Please hold... (Estimated wait time: 2 minutes)',
-};
-
 export default function LiveChat() {
+  const reducedMotion = useReducedMotion();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const inputRef = useRef<HTMLInputElement>(null);
+  const sequence = useRef(0);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const open = () => setIsOpen(true);
+    window.addEventListener(OPEN_ASSISTANT_EVENT, open);
+    return () => window.removeEventListener(OPEN_ASSISTANT_EVENT, open);
+  }, []);
 
-  const handleSend = () => {
-    if (!inputValue.trim()) return;
+  useEffect(() => {
+    if (isOpen) inputRef.current?.focus();
+  }, [isOpen]);
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: inputValue,
-      sender: 'user',
-      timestamp: new Date(),
-    };
+  useEffect(() => {
+    if (isOpen) messagesEndRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [messages, isOpen]);
 
-    setMessages(prev => [...prev, userMessage]);
+  function close(reset = false) {
+    setIsOpen(false);
+    if (reset) { setMessages(initialMessages()); setInputValue(''); }
+    window.requestAnimationFrame(() => triggerRef.current?.focus());
+  }
+
+  function send(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const match = responses.find((response) => response.keys.some((key) => trimmed.toLowerCase().includes(key)));
+    setMessages((previous) => [...previous, {
+      id: `user-${++sequence.current}`, text: trimmed, sender: 'user', timestamp: new Date(),
+    }, {
+      id: `bot-${++sequence.current}`,
+      text: match?.text || 'This automated guide can point you to shipping, tracking, locations, and print tools. Browse our help articles or use the official FedEx support website for a real shipment.',
+      links: match?.links || [{ label: 'Browse help articles', href: '/support' }],
+      sender: 'bot', timestamp: new Date(),
+    }]);
     setInputValue('');
-    setIsTyping(true);
-
-    // Simulate bot response
-    setTimeout(() => {
-      const lowerInput = inputValue.toLowerCase();
-      let responseText = 'I\'m not sure I understand. Could you rephrase that, or choose from the quick options below?';
-
-      for (const [key, response] of Object.entries(botResponses)) {
-        if (lowerInput.includes(key)) {
-          responseText = response;
-          break;
-        }
-      }
-
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: responseText,
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-
-      setMessages(prev => [...prev, botMessage]);
-      setIsTyping(false);
-    }, 1500);
-  };
-
-  const handleQuickReply = (reply: string) => {
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: reply,
-      sender: 'user',
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setIsTyping(true);
-
-    setTimeout(() => {
-      const responseText = botResponses[reply.toLowerCase()] || 'I\'ll help you with that!';
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: responseText,
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-
-      setMessages(prev => [...prev, botMessage]);
-      setIsTyping(false);
-    }, 1000);
-  };
+    inputRef.current?.focus();
+  }
 
   return (
     <>
-      {/* Chat Button */}
       <AnimatePresence>
-        {!isOpen && (
-          <motion.button
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 w-14 h-14 bg-fedex-purple text-white rounded-full shadow-lg hover:bg-fedex-purple-dark transition-colors z-50 flex items-center justify-center"
-          >
-            <MessageCircle className="h-6 w-6" />
-          </motion.button>
-        )}
+        {!isOpen && <motion.button ref={triggerRef} initial={reducedMotion ? false : { scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={reducedMotion ? { opacity: 1 } : { scale: 0, opacity: 0 }} transition={{ duration: reducedMotion ? 0 : 0.15 }} onClick={() => setIsOpen(true)} aria-label="Open chat" className="fixed bottom-6 right-6 w-14 h-14 bg-fedex-purple text-white rounded-full shadow-lg hover:bg-fedex-purple-dark transition-colors z-50 flex items-center justify-center"><MessageCircle className="h-6 w-6" aria-hidden="true" /></motion.button>}
       </AnimatePresence>
-
-      {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-6 right-6 w-full max-w-md bg-white rounded-2xl shadow-2xl z-50 overflow-hidden"
-          >
-            {/* Header */}
+          <motion.div initial={reducedMotion ? false : { opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 20, scale: 0.95 }} transition={{ duration: reducedMotion ? 0 : 0.15 }} role="dialog" aria-labelledby="shipping-assistant-title" aria-modal={false} onKeyDown={(event) => { if (event.key === 'Escape') { event.stopPropagation(); close(); } }} className="assistant-window fixed bottom-6 right-6 w-full max-w-md bg-white rounded-2xl shadow-2xl z-50 overflow-hidden">
             <div className="bg-fedex-purple p-4 flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3">
-                  <Bot className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold">FedEx Assistant</h3>
-                  <p className="text-white/70 text-sm">Online</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <Minimize2 className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => {
-                    setIsOpen(false);
-                    setMessages(initialMessages);
-                  }}
-                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
+              <div className="flex items-center"><div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3"><Bot className="h-6 w-6 text-white" aria-hidden="true" /></div><div><h3 id="shipping-assistant-title" className="text-white font-semibold">Shipping Assistant</h3><p className="text-white/80 text-sm">Automated guide</p></div></div>
+              <div className="flex items-center gap-2"><button onClick={() => close()} aria-label="Minimize chat" className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"><Minimize2 className="h-5 w-5" aria-hidden="true" /></button><button onClick={() => close(true)} aria-label="Close chat" className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"><X className="h-5 w-5" aria-hidden="true" /></button></div>
             </div>
-
-            {/* Messages */}
-            <div className="h-96 overflow-y-auto p-4 bg-gray-50">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex mb-4 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[80%] p-3 rounded-2xl ${
-                      message.sender === 'user'
-                        ? 'bg-fedex-purple text-white rounded-br-none'
-                        : 'bg-white shadow-sm rounded-bl-none'
-                    }`}
-                  >
-                    <p className="text-sm">{message.text}</p>
-                    <p className={`text-xs mt-1 ${message.sender === 'user' ? 'text-white/60' : 'text-gray-400'}`}>
-                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-
-              {isTyping && (
-                <div className="flex mb-4 justify-start">
-                  <div className="bg-white shadow-sm rounded-2xl rounded-bl-none p-3">
-                    <div className="flex gap-1">
-                      <motion.div
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 0.5, repeat: Infinity, delay: 0 }}
-                        className="w-2 h-2 bg-gray-400 rounded-full"
-                      />
-                      <motion.div
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 0.5, repeat: Infinity, delay: 0.1 }}
-                        className="w-2 h-2 bg-gray-400 rounded-full"
-                      />
-                      <motion.div
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 0.5, repeat: Infinity, delay: 0.2 }}
-                        className="w-2 h-2 bg-gray-400 rounded-full"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Quick Replies */}
-              {!isTyping && messages.length < 3 && (
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {quickReplies.map((reply) => (
-                    <button
-                      key={reply}
-                      onClick={() => handleQuickReply(reply)}
-                      className="px-3 py-2 bg-white border border-fedex-purple text-fedex-purple text-sm rounded-full hover:bg-fedex-purple hover:text-white transition-colors"
-                    >
-                      {reply}
-                    </button>
-                  ))}
-                </div>
-              )}
-
+            <div className="h-96 overflow-y-auto p-4 bg-gray-50" role="log" aria-label="Assistant conversation" aria-live="polite" aria-relevant="additions">
+              {messages.map((message) => <div key={message.id} className={`flex mb-4 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[90%] p-3 rounded-2xl ${message.sender === 'user' ? 'bg-fedex-purple text-white rounded-br-none' : 'bg-white shadow-sm rounded-bl-none'}`}><p className="text-sm">{message.text}</p>{message.links && <div className="flex flex-col gap-3 mt-3">{message.links.map((link) => link.href.startsWith('/') ? <Link key={link.href} to={link.href} onClick={() => close()} className="text-sm text-[#0073ad] underline font-medium">{link.label}</Link> : <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" className="text-sm text-[#0073ad] underline font-medium">{link.label} <ArrowUpRight size={13} className="inline" aria-hidden="true" /><span className="sr-only"> (opens in a new tab)</span></a>)}</div>}<p className={`text-xs mt-2 ${message.sender === 'user' ? 'text-white/80' : 'text-gray-600'}`}>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p></div></div>)}
+              {messages.length < 3 && <div className="flex flex-wrap gap-2 mt-4">{quickReplies.map((reply) => <button key={reply} onClick={() => send(reply)} className="px-3 py-2 bg-white border border-fedex-purple text-fedex-purple text-sm rounded-full hover:bg-fedex-purple hover:text-white transition-colors">{reply}</button>)}</div>}
               <div ref={messagesEndRef} />
             </div>
-
-            {/* Input */}
-            <div className="p-4 bg-white border-t">
-              <div className="flex gap-2">
-                <Input
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder="Type your message..."
-                  className="flex-1"
-                />
-                <Button
-                  onClick={handleSend}
-                  className="bg-fedex-purple hover:bg-fedex-purple-dark"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <form className="p-4 bg-white border-t" onSubmit={(event) => { event.preventDefault(); send(inputValue); }}>
+              <div className="flex gap-2"><Input ref={inputRef} value={inputValue} onChange={(event) => setInputValue(event.target.value)} maxLength={500} placeholder="Type your message..." aria-label="Chat message" className="flex-1" /><Button type="submit" aria-label="Send message" className="bg-fedex-purple hover:bg-fedex-purple-dark"><Send className="h-4 w-4" aria-hidden="true" /></Button></div>
+            </form>
           </motion.div>
         )}
       </AnimatePresence>

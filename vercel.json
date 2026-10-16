@@ -9,5 +9,8 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "installCommand": "npm ci && npm ci --include=dev --prefix app && npm ci --omit=dev --prefix server",
+  "buildCommand": "npm run build",
+  "outputDirectory": "app/dist"
 }

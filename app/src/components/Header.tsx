@@ -1,286 +1,386 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ChevronDown, Menu, User, Package, ShoppingCart, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, Menu, Search, UserCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Link, useLocation } from 'react-router-dom';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import BrandImage from '@/components/BrandImage';
+import { siteImages } from '@/lib/siteAssets';
+import { useWorkspace } from '@/context/workspace';
 
-const navItems = [
-  { label: 'Shipping', href: '/shipping', hasDropdown: true },
-  { label: 'Tracking', href: '/tracking', hasDropdown: true },
-  { label: 'Design & Print', href: '/design-print', hasDropdown: true },
-  { label: 'Locations', href: '/locations', hasDropdown: true },
-  { label: 'Support', href: '/support', hasDropdown: true },
+const navigation = [
+  {
+    label: 'Shipping',
+    key: 'shipping',
+    href: '/shipping',
+    links: [
+      { label: 'Shipping overview', href: '/shipping' },
+      { label: 'Create a shipment', href: '/shipping/create' },
+      { label: 'Get rates & delivery times', href: '/rate-calculator' },
+      { label: 'Schedule a pickup', href: '/shipping/pickup' },
+      { label: 'Order shipping supplies', href: '/store' },
+      { label: 'Return a package', href: '/returns' },
+    ],
+  },
+  {
+    label: 'Tracking',
+    key: 'tracking',
+    href: '/tracking',
+    links: [
+      { label: 'Track a package', href: '/tracking' },
+      { label: 'Your planning workspace', href: '/dashboard' },
+      { label: 'Saved shipment plans', href: '/dashboard?tab=plans' },
+    ],
+  },
+  {
+    label: 'Design & Print',
+    key: 'design_print',
+    href: '/design-print',
+    links: [
+      { label: 'Explore printing services', href: '/design-print' },
+      { label: 'Business cards', href: '/design-print?product=business-cards' },
+      { label: 'Posters', href: '/design-print?product=posters' },
+    ],
+  },
+  {
+    label: 'Locations',
+    key: 'locations',
+    href: '/locations',
+    links: [
+      { label: 'Find a FedEx location', href: '/locations' },
+      { label: 'Drop off a package', href: '/locations' },
+      { label: 'Hold for pickup', href: '/locations' },
+    ],
+  },
+  {
+    label: 'Support',
+    key: 'support',
+    href: '/support',
+    links: [
+      { label: 'Customer support', href: '/support' },
+      { label: 'Frequently asked questions', href: '/support' },
+      { label: 'Returns & claims', href: '/returns' },
+    ],
+  },
 ];
 
-const dropdownLinks: Record<string, { label: string; href: string }[]> = {
-  'Shipping': [
-    { label: 'Get a Quote', href: '/rate-calculator' },
-    { label: 'Create Shipment', href: '/shipping/create' },
-    { label: 'Schedule Pickup', href: '/shipping' },
-    { label: 'Shipping Rates', href: '/rate-calculator' },
-    { label: 'Returns', href: '/returns' },
-  ],
-  'Tracking': [
-    { label: 'Track a Package', href: '/tracking' },
-    { label: 'Delivery Manager', href: '/tracking' },
-    { label: 'View History', href: '/dashboard' },
-  ],
-  'Design & Print': [
-    { label: 'Business Cards', href: '/design-print' },
-    { label: 'Posters & Banners', href: '/design-print' },
-    { label: 'Upload File', href: '/design-print' },
-  ],
-  'Locations': [
-    { label: 'Find a Location', href: '/locations' },
-    { label: 'Drop Boxes', href: '/locations' },
-    { label: 'Hold for Pickup', href: '/locations' },
-  ],
-  'Support': [
-    { label: 'Contact Us', href: '/support' },
-    { label: 'FAQs', href: '/support' },
-    { label: 'File a Claim', href: '/returns' },
-  ],
-};
-
-const quickLinks = [
-  { label: 'Dashboard', href: '/dashboard', icon: User },
-  { label: 'Store', href: '/store', icon: ShoppingCart },
-  { label: 'Returns', href: '/returns', icon: RotateCcw },
+const searchPages = [
+  {
+    label: 'Track a package',
+    description: 'Check your shipment status',
+    href: '/tracking',
+    keywords: 'tracking delivery package',
+  },
+  {
+    label: 'Create a shipment',
+    description: 'Prepare your next shipment',
+    href: '/shipping/create',
+    keywords: 'shipping ship label',
+  },
+  {
+    label: 'Get a shipping quote',
+    description: 'Compare sample rates and shipping options',
+    href: '/rate-calculator',
+    keywords: 'rates price cost calculator',
+  },
+  {
+    label: 'Schedule a pickup',
+    description: 'Prepare a plan and continue to official FedEx booking',
+    href: '/shipping/pickup',
+    keywords: 'collection collect pickup driver',
+  },
+  {
+    label: 'Find a FedEx location',
+    description: 'Find shipping, printing, and drop-off locations',
+    href: '/locations',
+    keywords: 'store address drop off hours',
+  },
+  {
+    label: 'Design & print',
+    description: 'Explore printing services',
+    href: '/design-print',
+    keywords: 'business cards posters banners',
+  },
+  {
+    label: 'Customer support',
+    description: 'Find answers and contact support',
+    href: '/support',
+    keywords: 'help contact questions',
+  },
+  {
+    label: 'Returns & claims',
+    description: 'Prepare local notes and find official return or claim tools',
+    href: '/returns',
+    keywords: 'return returns refund claim claims damage damaged',
+  },
+  {
+    label: 'Shipping supplies',
+    description: 'Browse packaging and supplies',
+    href: '/store',
+    keywords: 'boxes envelope tape',
+  },
+  {
+    label: 'Your dashboard',
+    description: 'Manage browser-local shipment plans and addresses',
+    href: '/dashboard',
+    keywords: 'account profile history deliveries plans workspace',
+  },
+  {
+    label: 'Admin login',
+    description: 'Administrator sign-in and workspace management',
+    href: '/admin/login',
+    keywords: 'admin administrator settings owner',
+  },
 ];
 
 export default function Header() {
-  const { t, i18n } = useTranslation();
-  const labelKeyMap: Record<string, string> = {
-    'Shipping': 'shipping',
-    'Tracking': 'tracking',
-    'Design & Print': 'design_print',
-    'Locations': 'locations',
-    'Support': 'support',
-  };
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { t } = useTranslation();
+  const { user } = useWorkspace();
+  const accountPath = user ? (user.role === 'admin' ? '/admin/settings' : '/dashboard') : '/login';
   const location = useLocation();
+  const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const query = searchQuery.trim().toLowerCase();
+  const searchResults = searchPages.filter((page) =>
+    `${page.label} ${page.description} ${page.keywords}`.toLowerCase().includes(query),
+  );
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location]);
+  function closeSearch() {
+    setSearchOpen(false);
+    setSearchQuery('');
+  }
 
   return (
-    <motion.header
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'shadow-lg' : ''
-      }`}
-    >
-      {/* Top bar with quick links */}
-      <div className="bg-fedex-purple-dark hidden md:block">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-end space-x-6 py-2">
-            {quickLinks.map((link) => (
-              <Link
-                key={link.label}
-                to={link.href}
-                className="flex items-center text-white/80 text-xs hover:text-white transition-colors"
-              >
-                <link.icon className="h-3 w-3 mr-1" />
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
+    <>
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+      <header className="site-header">
+        <div className="site-container header-inner">
+          <Link to="/" aria-label="FedEx home" className="brand-logo">
+            <BrandImage image={siteImages.logo} priority />
+          </Link>
 
-      {/* Main header */}
-      <div className="bg-fedex-purple">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link to="/" className="flex items-center">
-              <span className="text-2xl font-bold tracking-tight">
-                <span className="text-white">Fed</span>
-                <span className="text-fedex-orange">Ex</span>
-              </span>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center space-x-1">
-              {navItems.map((item) => (
-                <div
-                  key={item.label}
-                  className="relative"
-                  onMouseEnter={() => setActiveDropdown(item.label)}
-                  onMouseLeave={() => setActiveDropdown(null)}
-                >
-                      <Link
-                        to={item.href}
-                        className="flex items-center px-4 py-2 text-white text-sm font-medium hover:bg-white/10 rounded transition-colors duration-200"
-                      >
-                        {t(`nav.${labelKeyMap[item.label]}`) || item.label}
-                        {item.hasDropdown && (
-                          <ChevronDown className="ml-1 h-4 w-4" />
-                        )}
-                      </Link>
-
-                  {/* Dropdown */}
-                  <AnimatePresence>
-                    {item.hasDropdown && activeDropdown === item.label && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden"
-                      >
-                        <div className="py-2">
-                          {dropdownLinks[item.label]?.map((link) => (
-                            <Link
-                              key={link.label}
-                              to={link.href}
-                              className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-fedex-purple transition-colors"
-                            >
-                              {link.label}
-                            </Link>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ))}
-            </nav>
-
-            {/* Right side actions */}
-            <div className="flex items-center space-x-4">
-              {/* Show language selector only on non-admin pages */}
-              {!location.pathname.startsWith('/admin') && (
-                <div className="hidden sm:block">
-                  <select
-                    aria-label="Language selector"
-                    onChange={(e) => i18n.changeLanguage(e.target.value)}
-                    value={i18n.language || 'en'}
-                    className="mr-4 rounded-md px-2 py-1 text-sm"
-                  >
-                    <option value="en">EN</option>
-                    <option value="es">ES</option>
-                    <option value="fr">FR</option>
-                    <option value="de">DE</option>
-                    <option value="zh">中文</option>
-                  </select>
-                </div>
-              )}
-              {/* Dashboard quick link */}
-              <Link
-                to="/dashboard"
-                className="hidden md:flex items-center text-white text-sm font-medium hover:bg-white/10 px-3 py-2 rounded transition-colors duration-200"
-              >
-                <Package className="mr-2 h-4 w-4" />
-                Dashboard
-              </Link>
-
-              {/* Sign Up / Log In */}
-              <Link
-                to="/login"
-                className="hidden sm:flex items-center text-white text-sm font-medium hover:bg-white/10 px-4 py-2 rounded transition-colors duration-200"
-              >
-                <User className="mr-2 h-4 w-4" />
-                Sign Up or Log In
-              </Link>
-
-              {/* Search */}
-              <button
-                className="text-white hover:bg-white/10 p-2 rounded transition-colors duration-200"
-                aria-label="Search"
-              >
-                <Search className="h-5 w-5" />
-              </button>
-
-              {/* Mobile menu button */}
-              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetTrigger asChild>
+          <nav aria-label="Main navigation" className="desktop-navigation">
+            {navigation.map((item) => (
+              <DropdownMenu key={item.key}>
+                <DropdownMenuTrigger asChild>
                   <button
-                    className="lg:hidden text-white hover:bg-white/10 p-2 rounded transition-colors duration-200"
-                    aria-label="Menu"
+                    type="button"
+                    className={`header-nav-button ${location.pathname.startsWith(item.href) ? 'is-active' : ''}`}
                   >
-                    <Menu className="h-6 w-6" />
+                    {t(`nav.${item.key}`, item.label)}
+                    <ChevronDown size={13} strokeWidth={1.5} aria-hidden="true" />
                   </button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-80 bg-fedex-purple border-none overflow-y-auto">
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-center justify-between mb-8">
-                      <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>
-                        <span className="text-2xl font-bold">
-                          <span className="text-white">Fed</span>
-                          <span className="text-fedex-orange">Ex</span>
-                        </span>
-                      </Link>
-                    </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" sideOffset={0} className="header-dropdown">
+                  {item.links.map((link) => (
+                    <DropdownMenuItem key={link.label} asChild className="header-dropdown-link">
+                      <Link to={link.href}>{link.label}</Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ))}
+          </nav>
 
-                    {/* Quick Links */}
-                    <div className="mb-6 pb-6 border-b border-white/20">
-                      <p className="text-white/60 text-xs uppercase mb-3">Quick Links</p>
-                      <div className="space-y-2">
-                        {quickLinks.map((link) => (
-                          <Link
-                            key={link.label}
-                            to={link.href}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center text-white text-sm py-2 px-4 hover:bg-white/10 rounded transition-colors"
-                          >
-                            <link.icon className="mr-3 h-4 w-4" />
-                            {link.label}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-
-                    <nav className="flex flex-col space-y-2">
-                      {navItems.map((item, index) => (
-                        <motion.div
-                          key={item.label}
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                        >
-                          <Link
-                            to={item.href}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="block text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded transition-colors"
-                          >
-                            {item.label}
-                          </Link>
-                        </motion.div>
-                      ))}
-                    </nav>
-
-                    <div className="mt-auto pt-6">
-                      <Link
-                        to="/login"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center text-white text-lg font-medium py-3 px-4 hover:bg-white/10 rounded transition-colors"
-                      >
-                        <User className="mr-3 h-5 w-5" />
-                        Sign Up or Log In
-                      </Link>
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
+          <div className="header-actions">
+            <div className="header-account-control">
+              <Link
+                to={accountPath}
+                className="header-account"
+                aria-label={user ? 'Open your workspace' : 'Sign up or log in'}
+              >
+                <span>{user ? 'My Workspace' : 'Sign Up or Log In'}</span>
+                <UserCircle size={26} strokeWidth={1.25} aria-hidden="true" />
+              </Link>
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="header-icon-button header-account-toggle"
+                    aria-label="Account access options"
+                  >
+                    <ChevronDown size={15} aria-hidden="true" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sideOffset={8}
+                  className="header-dropdown header-account-dropdown"
+                >
+                  <DropdownMenuLabel className="header-account-menu-label">
+                    Independent workspace
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem asChild className="header-dropdown-link">
+                    <Link to={user ? '/dashboard' : '/login'}>
+                      <UserCircle size={18} aria-hidden="true" />
+                      {user ? 'Personal workspace' : 'Personal login'}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="header-dropdown-link">
+                    <Link to={user ? '/dashboard?tab=profile' : '/login?mode=create'}>
+                      {user ? 'Profile settings' : 'Create profile'}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="header-dropdown-link">
+                    <Link to={user?.role === 'admin' ? '/admin/settings' : '/admin/login'}>
+                      <ShieldCheck size={18} aria-hidden="true" />
+                      {user?.role === 'admin' ? 'Admin dashboard' : 'Admin login'}
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
+
+            <Dialog
+              open={searchOpen}
+              onOpenChange={(open) => {
+                setSearchOpen(open);
+                if (!open) setSearchQuery('');
+              }}
+            >
+              <DialogTrigger asChild>
+                <button type="button" className="header-icon-button" aria-label="Search this site">
+                  <Search size={26} strokeWidth={1.25} aria-hidden="true" />
+                </button>
+              </DialogTrigger>
+              <DialogContent className="site-search-dialog">
+                <DialogTitle className="site-search-title">How can we help you?</DialogTitle>
+                <DialogDescription>
+                  Search shipping, tracking, locations, and more.
+                </DialogDescription>
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    if (searchResults.length > 0) {
+                      navigate(searchResults[0].href);
+                      closeSearch();
+                    }
+                  }}
+                  className="site-search-form"
+                >
+                  <label className="sr-only" htmlFor="site-search">
+                    Search this site
+                  </label>
+                  <Search size={21} aria-hidden="true" />
+                  <input
+                    id="site-search"
+                    type="search"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="What are you looking for?"
+                    autoComplete="off"
+                  />
+                </form>
+                <p className="search-results-label" aria-live="polite">
+                  {query ? `${searchResults.length} results` : 'Popular pages'}
+                </p>
+                <ul className="site-search-results">
+                  {searchResults.map((page) => (
+                    <li key={page.href}>
+                      <Link to={page.href} onClick={closeSearch}>
+                        <span>
+                          <strong>{page.label}</strong>
+                          <small>{page.description}</small>
+                        </span>
+                        <ArrowRight size={18} aria-hidden="true" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                {searchResults.length === 0 && (
+                  <p className="search-empty">
+                    No matching pages. Try “tracking,” “shipping,” or “locations.”
+                  </p>
+                )}
+              </DialogContent>
+            </Dialog>
+
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  className="header-icon-button mobile-menu-trigger"
+                  aria-label="Open menu"
+                >
+                  <Menu size={26} strokeWidth={1.5} aria-hidden="true" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="right" className="mobile-navigation-sheet">
+                <SheetTitle className="sr-only">Main menu</SheetTitle>
+                <SheetDescription className="sr-only">
+                  Shipping, tracking, and account navigation.
+                </SheetDescription>
+                <Link
+                  to="/"
+                  className="brand-logo"
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-label="FedEx home"
+                >
+                  <BrandImage image={siteImages.logo} priority />
+                </Link>
+                <nav aria-label="Mobile navigation">
+                  {navigation.map((item) => (
+                    <Link key={item.key} to={item.href} onClick={() => setMobileMenuOpen(false)}>
+                      {t(`nav.${item.key}`, item.label)}
+                      <ArrowRight size={18} aria-hidden="true" />
+                    </Link>
+                  ))}
+                </nav>
+                <div className="mobile-quick-links">
+                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    Your dashboard
+                  </Link>
+                  <Link to="/store" onClick={() => setMobileMenuOpen(false)}>
+                    Shipping supplies
+                  </Link>
+                  <Link to="/returns" onClick={() => setMobileMenuOpen(false)}>
+                    Return a package
+                  </Link>
+                  <Link to="/rate-calculator" onClick={() => setMobileMenuOpen(false)}>
+                    Get a quote
+                  </Link>
+                  <Link to={accountPath} onClick={() => setMobileMenuOpen(false)}>
+                    <UserCircle size={23} aria-hidden="true" />{' '}
+                    {user ? 'My Workspace' : 'Sign Up or Log In'}
+                  </Link>
+                  <Link
+                    to={user?.role === 'admin' ? '/admin/settings' : '/admin/login'}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <ShieldCheck size={21} aria-hidden="true" />
+                    {user?.role === 'admin' ? 'Admin dashboard' : 'Admin login'}
+                  </Link>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
-      </div>
-    </motion.header>
+      </header>
+    </>
   );
 }

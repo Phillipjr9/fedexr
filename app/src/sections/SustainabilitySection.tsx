@@ -1,16 +1,19 @@
 import TwoColumnSection from '@/components/TwoColumnSection';
+import { siteImages } from '@/lib/siteAssets';
 
 export default function SustainabilitySection() {
   return (
     <TwoColumnSection
       title="Ship more responsibly"
-      description="Using reusable packaging supports Earth Day and your sustainability goals. It can also help you cut costs and boost efficiency."
-      ctaText="Get free packaging"
-      ctaLink="/shipping"
-      image="/images/sustainability.jpg"
-      imageAlt="Eco-friendly reusable packaging materials"
+      description="Give your packaging a second life. Explore reusable FedEx packaging and shipping supplies that help you prepare for your next delivery."
+      ctaText="Explore shipping supplies"
+      ctaLink="/store"
+      image={siteImages.packaging.src}
+      imageAlt={siteImages.packaging.alt}
+      imageWidth={siteImages.packaging.width}
+      imageHeight={siteImages.packaging.height}
       imagePosition="right"
-      background="white"
+      background="gray"
     />
   );
 }

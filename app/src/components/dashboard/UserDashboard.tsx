@@ -1,362 +1,500 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Package, MapPin, CreditCard, Gift, Truck, CheckCircle, ChevronRight, Star, TrendingUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import {
+  ArrowRight,
+  Download,
+  FolderOpen,
+  LayoutDashboard,
+  MapPin,
+  Package,
+  Pencil,
+  Route,
+  Settings,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  UserRound,
+} from 'lucide-react';
+import WorkspaceShell, { type WorkspaceSection } from '@/components/workspace/WorkspaceShell';
+import PlanCollection from '@/components/workspace/PlanCollection';
+import ProfilePanel from '@/components/workspace/ProfilePanel';
+import { AddressEditor, ConfirmRemove } from '@/components/workspace/WorkspaceEditors';
+import BrandImage from '@/components/BrandImage';
+import { ExternalLink, ServiceNotice } from '@/components/ServiceLayout';
+import { useWorkspace } from '@/context/workspace';
+import { downloadText } from '@/lib/localDownloads';
+import { siteImages } from '@/lib/siteAssets';
+import { generateSampleAddress } from '@/lib/addressGenerator';
+import { holdReasonLabel, placeLabel, shipmentStatusLabel } from '@/lib/publicShipments';
+import {
+  DEMO_TRACKING_REFERENCE,
+  type AddressInput,
+  type WorkspaceAddress,
+} from '@/lib/workspace';
 
-const tabs = [
-  { id: 'overview', label: 'Overview', icon: TrendingUp },
-  { id: 'shipments', label: 'Shipments', icon: Package },
-  { id: 'addresses', label: 'Addresses', icon: MapPin },
-  { id: 'payment', label: 'Payment', icon: CreditCard },
-  { id: 'rewards', label: 'Rewards', icon: Gift },
-];
-
-const recentShipments = [
-  { id: '784512369874', status: 'Delivered', date: 'Apr 2, 2026', to: 'John Smith', tracking: '784512369874' },
-  { id: '987654321456', status: 'In Transit', date: 'Apr 1, 2026', to: 'Jane Doe', tracking: '987654321456' },
-  { id: '456789123456', status: 'Delivered', date: 'Mar 28, 2026', to: 'Bob Johnson', tracking: '456789123456' },
-  { id: '789123456789', status: 'Delivered', date: 'Mar 25, 2026', to: 'Alice Williams', tracking: '789123456789' },
-];
-
-const savedAddresses = [
-  { id: 1, name: 'Home', street: '123 Main St', city: 'New York', state: 'NY', zip: '10001', default: true },
-  { id: 2, name: 'Office', street: '456 Broadway', city: 'New York', state: 'NY', zip: '10013', default: false },
-];
-
-const paymentMethods = [
-  { id: 1, type: 'visa', last4: '4242', expiry: '12/27', default: true },
-  { id: 2, type: 'mastercard', last4: '8888', expiry: '08/26', default: false },
+const sections: WorkspaceSection[] = [
+  { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={19} aria-hidden="true" /> },
+  { id: 'plans', label: 'Shipment plans', icon: <Package size={19} aria-hidden="true" /> },
+  { id: 'addresses', label: 'Address book', icon: <MapPin size={19} aria-hidden="true" /> },
+  { id: 'profile', label: 'Profile & access', icon: <UserRound size={19} aria-hidden="true" /> },
+  { id: 'services', label: 'Carrier services', icon: <Settings size={19} aria-hidden="true" /> },
 ];
 
 export default function UserDashboard() {
-  const [activeTab, setActiveTab] = useState('overview');
-
-  const userName = typeof window !== 'undefined' ? (localStorage.getItem('userName') || 'Member') : 'Member';
+  const { data, user, removeAddress, setDefaultAddress, mode } = useWorkspace();
+  const [params] = useSearchParams();
+  const active = sections.some((section) => section.id === params.get('tab'))
+    ? params.get('tab')!
+    : 'overview';
+  const [editingAddress, setEditingAddress] = useState<WorkspaceAddress | 'new' | null>(null);
+  const [generatedAddress, setGeneratedAddress] = useState<AddressInput | null>(null);
+  const [deletingAddress, setDeletingAddress] = useState<WorkspaceAddress | null>(null);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const plans = data.plans.filter((plan) => plan.userId === user?.id);
+  const assignedShipments = data.shipments
+    .filter((shipment) => shipment.userId === user?.id && !shipment.archivedAt)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const addresses = data.addresses
+    .filter((address) => address.userId === user?.id)
+    .sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
+  const recent = [...plans].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 4);
+  function exportProfile() {
+    downloadText(
+      'my-workspace-records.json',
+      JSON.stringify(
+        {
+          profile: user && { name: user.name, email: user.email },
+          plans,
+          addresses,
+          note: `${mode === 'server' ? 'Account database' : 'Browser-local'} workspace records. No carrier bookings or payment information.`,
+        },
+        null,
+        2,
+      ),
+    );
+    setMessage('Your workspace records were downloaded without passphrase hashes.');
+  }
 
   return (
-    <div className="min-h-screen bg-fedex-gray">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="w-16 h-16 bg-fedex-purple rounded-full flex items-center justify-center text-white text-2xl font-bold mr-4">
-                JD
+    <WorkspaceShell
+      title={`Hello, ${user?.name.split(' ')[0] || 'there'}`}
+      subtitle="Your plans, addresses, and next steps—all in one place."
+      active={active}
+      sections={sections}
+    >
+      {active === 'overview' && (
+        <div className="workspace-stack">
+          <div className="workspace-stats">
+            {[
+              { label: 'Saved shipment plans', value: plans.length, icon: Package },
+              {
+                label: 'Ready to review',
+                value: plans.filter((plan) => plan.status === 'ready').length,
+                icon: ShieldCheck,
+              },
+              { label: 'Saved addresses', value: addresses.length, icon: MapPin },
+            ].map((stat) => (
+              <div className="workspace-stat" key={stat.label}>
+                <stat.icon size={25} strokeWidth={1.4} aria-hidden="true" />
+                <strong>{stat.value}</strong>
+                <span>{stat.label}</span>
               </div>
+            ))}
+          </div>
+          {user?.demo && (
+            <section
+              className="workspace-panel workspace-demo-tracking"
+              aria-labelledby="demo-tracking-heading"
+            >
+              <span className="workspace-demo-tracking-icon" aria-hidden="true">
+                <Route size={27} strokeWidth={1.5} />
+              </span>
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900">Welcome back, {userName}!</h1>
-                <p className="text-gray-500">Member since 2023</p>
+                <p className="service-eyebrow">Demo tracking monitor</p>
+                <h2 id="demo-tracking-heading">Monitor a sample shipment</h2>
+                <p>
+                  Open the FedEx-style sample timeline for {DEMO_TRACKING_REFERENCE}. The journey is
+                  simulated for design review and is not connected to a live carrier shipment.
+                </p>
               </div>
+              <Link
+                className="brand-button workspace-primary"
+                to={`/tracking?number=${encodeURIComponent(DEMO_TRACKING_REFERENCE)}`}
+              >
+                View sample tracking <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+            </section>
+          )}
+          {assignedShipments.length > 0 && (
+            <section className="workspace-panel" aria-labelledby="assigned-shipments-heading">
+              <div className="workspace-panel-heading">
+                <div>
+                  <h2 id="assigned-shipments-heading">Shipments created for you</h2>
+                  <p>An administrator created these application shipments for your workspace.</p>
+                </div>
+                <Route size={27} color="#4d148c" aria-hidden="true" />
+              </div>
+              <ul className="workspace-recent-list">
+                {assignedShipments.slice(0, 4).map((shipment) => (
+                  <li key={shipment.id}>
+                    <span className="workspace-record-icon">
+                      <Package size={20} aria-hidden="true" />
+                    </span>
+                    <div>
+                      <strong>{shipment.trackingNumber}</strong>
+                      <span>
+                        {placeLabel(
+                          shipment.originCity,
+                          shipment.originRegion,
+                          shipment.originPostalCode,
+                        )}{' '}
+                        →{' '}
+                        {placeLabel(
+                          shipment.destinationCity,
+                          shipment.destinationRegion,
+                          shipment.destinationPostalCode,
+                        )}
+                      </span>
+                      {shipment.status === 'on_hold' && (
+                        <span className="workspace-hold-issue">
+                          Hold issue: {holdReasonLabel(shipment.holdReason)}
+                        </span>
+                      )}
+                      <Link
+                        className="workspace-recent-tracking"
+                        to={`/tracking?number=${encodeURIComponent(shipment.trackingNumber)}`}
+                      >
+                        Track publicly <ArrowRight size={13} aria-hidden="true" />
+                      </Link>
+                    </div>
+                    <span className="workspace-status ready">
+                      {shipmentStatusLabel(shipment.status)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <section className="workspace-panel">
+            <div className="workspace-panel-heading">
+              <div>
+                <h2>Recent shipment plans</h2>
+                <p>
+                  {mode === 'server'
+                    ? 'Saved to your account—not retrieved from a carrier.'
+                    : 'Saved by you in this browser—not retrieved from a carrier.'}
+                </p>
+              </div>
+              <Link to="/dashboard?tab=plans" className="service-text-link">
+                View all plans <ArrowRight size={15} aria-hidden="true" />
+              </Link>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">FedEx Rewards Points</p>
-              <p className="text-3xl font-bold text-fedex-purple">2,450</p>
+            {recent.length === 0 ? (
+              <div className="workspace-empty">
+                <FolderOpen size={36} strokeWidth={1.3} aria-hidden="true" />
+                <h3>A fresh start for your next shipment</h3>
+                <p>Your workspace starts empty. Save a plan to see real local activity here.</p>
+                <Link className="brand-button brand-button-outline" to="/dashboard?tab=plans&new=1">
+                  Create your first plan
+                </Link>
+              </div>
+            ) : (
+              <ul className="workspace-recent-list">
+                {recent.map((plan) => (
+                  <li key={plan.id}>
+                    <span className="workspace-record-icon">
+                      <Package size={20} aria-hidden="true" />
+                    </span>
+                    <div>
+                      <strong>{plan.recipient}</strong>
+                      <span>
+                        {plan.from} → {plan.to} · {plan.shipDate}
+                      </span>
+                      <Link
+                        className="workspace-recent-tracking"
+                        to={`/tracking${plan.reference ? `?number=${encodeURIComponent(plan.reference)}` : ''}`}
+                        aria-label={`View sample tracking for ${plan.recipient}`}
+                      >
+                        Sample tracking <ArrowRight size={13} aria-hidden="true" />
+                      </Link>
+                    </div>
+                    <span className={`workspace-status ${plan.status}`}>
+                      {plan.status === 'ready'
+                        ? 'Ready to review'
+                        : plan.status === 'draft'
+                          ? 'Draft'
+                          : 'Archived'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          <div className="workspace-quick-grid">
+            <Link to="/dashboard?tab=plans&new=1">
+              <Package size={23} aria-hidden="true" />
+              <strong>Plan a shipment</strong>
+              <span>Save package and route details.</span>
+            </Link>
+            <Link to="/rate-calculator">
+              <Settings size={23} aria-hidden="true" />
+              <strong>Compare sample rates</strong>
+              <span>Explore local price estimates.</span>
+            </Link>
+            <Link to="/shipping/pickup">
+              <MapPin size={23} aria-hidden="true" />
+              <strong>Prepare a pickup</strong>
+              <span>Review details before official booking.</span>
+            </Link>
+          </div>
+          <section className="workspace-feature">
+            <BrandImage image={siteImages.rewards} />
+            <div>
+              <h2>Your workspace, not your carrier account</h2>
+              <p>
+                Local plans help organize your next steps. Real labels, billing, delivery
+                commitments, and FedEx Rewards stay on the official website.
+              </p>
+              <ExternalLink href="https://www.fedex.com/en-us/home.html">
+                Visit official FedEx services
+              </ExternalLink>
+            </div>
+          </section>
+        </div>
+      )}
+      {active === 'plans' && <PlanCollection plans={plans} />}
+      {active === 'addresses' && (
+        <section className="workspace-panel">
+          <div className="workspace-panel-heading">
+            <div>
+              <h2>Your address book</h2>
+              <p>
+                {mode === 'server'
+                  ? 'Your addresses are stored in the account database, not synchronized with FedEx.'
+                  : 'Only addresses you save here are shown. Stored locally, not synchronized with FedEx.'}
+              </p>
+            </div>
+            <div className="workspace-heading-actions">
+              <button
+                type="button"
+                className="brand-button workspace-primary"
+                onClick={() => setEditingAddress('new')}
+              >
+                <MapPin size={16} aria-hidden="true" />
+                Add address
+              </button>
+              <button
+                type="button"
+                className="brand-button brand-button-outline"
+                onClick={() => setGeneratedAddress(generateSampleAddress())}
+              >
+                <Sparkles size={16} aria-hidden="true" />
+                Generate sample address
+              </button>
             </div>
           </div>
-        </div>
-
-        <div className="grid lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center px-4 py-3 text-left transition-colors ${
-                    activeTab === tab.id
-                      ? 'bg-fedex-purple text-white'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <tab.icon className="h-5 w-5 mr-3" />
-                  {tab.label}
-                </button>
+          {message && (
+            <p className="workspace-feedback" role="status">
+              {message}
+            </p>
+          )}
+          {error && (
+            <p className="workspace-feedback error" role="alert">
+              {error}
+            </p>
+          )}
+          {addresses.length === 0 ? (
+            <div className="workspace-empty">
+              <MapPin size={38} strokeWidth={1.3} aria-hidden="true" />
+              <h3>No saved addresses yet</h3>
+              <p>Create an address entry and choose your preferred default.</p>
+              <button
+                type="button"
+                className="brand-button brand-button-outline"
+                onClick={() => setEditingAddress('new')}
+              >
+                Add your first address
+              </button>
+            </div>
+          ) : (
+            <div className="workspace-address-grid">
+              {addresses.map((address) => (
+                <article className="workspace-address" key={address.id}>
+                  <div>
+                    <h3>{address.label}</h3>
+                    {address.isDefault && <span className="workspace-status ready">Default</span>}
+                  </div>
+                  <strong>{address.name}</strong>
+                  <address>
+                    {address.street}
+                    <br />
+                    {address.city}
+                    {address.region ? `, ${address.region}` : ''} {address.postalCode}
+                    <br />
+                    {address.country}
+                  </address>
+                  <div className="workspace-address-actions">
+                    <button
+                      type="button"
+                      className="service-text-link"
+                      onClick={() => setEditingAddress(address)}
+                    >
+                      <Pencil size={14} aria-hidden="true" />
+                      Edit<span className="sr-only"> {address.label}</span>
+                    </button>
+                    {!address.isDefault && (
+                      <button
+                        type="button"
+                        className="service-text-link"
+                        onClick={async () => {
+                          try {
+                            await setDefaultAddress(address.id);
+                            setMessage('Default address saved.');
+                            setError('');
+                          } catch (cause) {
+                            setError(
+                              cause instanceof Error
+                                ? cause.message
+                                : 'The default could not be changed.',
+                            );
+                          }
+                        }}
+                      >
+                        Set default<span className="sr-only"> {address.label}</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="service-text-link"
+                      aria-label={`Remove address ${address.label}`}
+                      onClick={() => setDeletingAddress(address)}
+                    >
+                      <Trash2 size={14} aria-hidden="true" />
+                      Remove
+                    </button>
+                  </div>
+                </article>
               ))}
             </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
+          )}
+          {editingAddress && (
+            <AddressEditor
+              key={editingAddress === 'new' ? 'new' : editingAddress.id}
+              record={editingAddress === 'new' ? undefined : editingAddress}
+              onClose={() => setEditingAddress(null)}
+              onSaved={() => {
+                setMessage(
+                  mode === 'server'
+                    ? 'Address saved to your account.'
+                    : 'Address saved in this browser.',
+                );
+                setError('');
+              }}
+            />
+          )}
+          {generatedAddress && (
+            <AddressEditor
+              key={`generated-${generatedAddress.street}-${generatedAddress.postalCode}`}
+              initialInput={generatedAddress}
+              onClose={() => setGeneratedAddress(null)}
+              onSaved={() => {
+                setGeneratedAddress(null);
+                setMessage(
+                  'Sample address saved. It is generated for this workspace and is not a verified or deliverable address.',
+                );
+                setError('');
+              }}
+            />
+          )}
+          {deletingAddress && (
+            <ConfirmRemove
+              title="Remove this saved address?"
+              description="Only the address in this local workspace is removed. Carrier address books are not affected."
+              onClose={() => setDeletingAddress(null)}
+              onConfirm={async () => {
+                try {
+                  await removeAddress(deletingAddress.id);
+                  setDeletingAddress(null);
+                  setMessage('Saved address removed.');
+                } catch (cause) {
+                  setError(
+                    cause instanceof Error ? cause.message : 'The address could not be removed.',
+                  );
+                  throw cause;
+                }
+              }}
+            />
+          )}
+        </section>
+      )}
+      {active === 'profile' && (
+        <>
+          <ProfilePanel />
+          <section className="workspace-panel workspace-export">
+            <h2>Take a copy of your records</h2>
+            <p>
+              Download only this profile’s plans and addresses. Credential hashes are not included.
+            </p>
+            <button
+              type="button"
+              className="brand-button brand-button-outline"
+              onClick={exportProfile}
             >
-              {/* Overview Tab */}
-              {activeTab === 'overview' && (
-                <div className="space-y-6">
-                  {/* Stats Cards */}
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="bg-white rounded-lg shadow-sm p-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <Package className="h-8 w-8 text-fedex-purple" />
-                        <span className="text-sm text-green-600 font-medium">+12%</span>
-                      </div>
-                      <p className="text-3xl font-bold text-gray-900">24</p>
-                      <p className="text-gray-500">Shipments this month</p>
-                    </div>
-                    <div className="bg-white rounded-lg shadow-sm p-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <Truck className="h-8 w-8 text-fedex-orange" />
-                        <span className="text-sm text-green-600 font-medium">+5%</span>
-                      </div>
-                      <p className="text-3xl font-bold text-gray-900">$1,245</p>
-                      <p className="text-gray-500">Shipping spent</p>
-                    </div>
-                    <div className="bg-white rounded-lg shadow-sm p-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <Gift className="h-8 w-8 text-fedex-purple" />
-                        <span className="text-sm text-green-600 font-medium">+250</span>
-                      </div>
-                      <p className="text-3xl font-bold text-gray-900">2,450</p>
-                      <p className="text-gray-500">Reward points</p>
-                    </div>
-                  </div>
-
-                  {/* Recent Shipments */}
-                  <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg font-semibold text-gray-900">Recent Shipments</h2>
-                      <button
-                        onClick={() => setActiveTab('shipments')}
-                        className="text-fedex-link hover:text-fedex-link-dark text-sm"
-                      >
-                        View All
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      {recentShipments.slice(0, 3).map((shipment) => (
-                        <div key={shipment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
-                              shipment.status === 'Delivered' ? 'bg-green-100' : 'bg-blue-100'
-                            }`}>
-                              {shipment.status === 'Delivered' ? (
-                                <CheckCircle className="h-5 w-5 text-green-600" />
-                              ) : (
-                                <Truck className="h-5 w-5 text-blue-600" />
-                              )}
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900">To: {shipment.to}</p>
-                              <p className="text-sm text-gray-500">{shipment.date}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              shipment.status === 'Delivered'
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-blue-100 text-blue-700'
-                            }`}>
-                              {shipment.status}
-                            </span>
-                            <p className="text-sm text-gray-500 mt-1">{shipment.tracking}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Quick Actions */}
-                  <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <Link to="/shipping/create">
-                        <Button className="w-full bg-fedex-purple hover:bg-fedex-purple-dark">
-                          <Package className="mr-2 h-4 w-4" />
-                          Create Shipment
-                        </Button>
-                      </Link>
-                      <Link to="/tracking">
-                        <Button variant="outline" className="w-full border-fedex-purple text-fedex-purple hover:bg-fedex-purple/10">
-                          <Truck className="mr-2 h-4 w-4" />
-                          Track Package
-                        </Button>
-                      </Link>
-                      <Link to="/rate-calculator">
-                        <Button variant="outline" className="w-full border-fedex-purple text-fedex-purple hover:bg-fedex-purple/10">
-                          <CreditCard className="mr-2 h-4 w-4" />
-                          Get Quote
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Shipments Tab */}
-              {activeTab === 'shipments' && (
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">All Shipments</h2>
-                  <div className="space-y-3">
-                    {recentShipments.map((shipment) => (
-                      <div key={shipment.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-fedex-purple transition-colors">
-                        <div className="flex items-center">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 ${
-                            shipment.status === 'Delivered' ? 'bg-green-100' : 'bg-blue-100'
-                          }`}>
-                            {shipment.status === 'Delivered' ? (
-                              <CheckCircle className="h-6 w-6 text-green-600" />
-                            ) : (
-                              <Truck className="h-6 w-6 text-blue-600" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">Tracking: {shipment.tracking}</p>
-                            <p className="text-sm text-gray-500">To: {shipment.to}</p>
-                            <p className="text-sm text-gray-400">{shipment.date}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium mr-4 ${
-                            shipment.status === 'Delivered'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-blue-100 text-blue-700'
-                          }`}>
-                            {shipment.status}
-                          </span>
-                          <Link to={`/tracking?number=${shipment.tracking}`}>
-                            <ChevronRight className="h-5 w-5 text-gray-400" />
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Addresses Tab */}
-              {activeTab === 'addresses' && (
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900">Saved Addresses</h2>
-                    <Button className="bg-fedex-purple hover:bg-fedex-purple-dark">
-                      <MapPin className="mr-2 h-4 w-4" />
-                      Add Address
-                    </Button>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {savedAddresses.map((address) => (
-                      <div key={address.id} className="border border-gray-200 rounded-lg p-4 relative">
-                        {address.default && (
-                          <span className="absolute top-2 right-2 px-2 py-1 bg-fedex-purple text-white text-xs rounded">
-                            Default
-                          </span>
-                        )}
-                        <p className="font-semibold text-gray-900">{address.name}</p>
-                        <p className="text-gray-600">{address.street}</p>
-                        <p className="text-gray-600">{address.city}, {address.state} {address.zip}</p>
-                        <div className="mt-3 flex gap-2">
-                          <Button variant="outline" size="sm">Edit</Button>
-                          {!address.default && (
-                            <Button variant="outline" size="sm">Set Default</Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Payment Tab */}
-              {activeTab === 'payment' && (
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900">Payment Methods</h2>
-                    <Button className="bg-fedex-purple hover:bg-fedex-purple-dark">
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Add Card
-                    </Button>
-                  </div>
-                  <div className="space-y-3">
-                    {paymentMethods.map((card) => (
-                      <div key={card.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                        <div className="flex items-center">
-                          <div className="w-12 h-8 bg-gray-200 rounded mr-4 flex items-center justify-center">
-                            <span className="text-xs font-bold uppercase">{card.type}</span>
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">•••• {card.last4}</p>
-                            <p className="text-sm text-gray-500">Expires {card.expiry}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {card.default && (
-                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
-                              Default
-                            </span>
-                          )}
-                          <Button variant="outline" size="sm">Edit</Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Rewards Tab */}
-              {activeTab === 'rewards' && (
-                <div className="space-y-6">
-                  <div className="bg-gradient-to-r from-fedex-purple to-fedex-purple-dark rounded-lg p-6 text-white">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-white/80 mb-1">Your Points</p>
-                        <p className="text-5xl font-bold">2,450</p>
-                        <p className="text-white/80 mt-2">550 points until your next $25 reward</p>
-                      </div>
-                      <Gift className="h-20 w-20 text-white/30" />
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Available Rewards</h2>
-                    <div className="grid md:grid-cols-3 gap-4">
-                      {[
-                        { points: 3000, value: '$25' },
-                        { points: 5000, value: '$50' },
-                        { points: 10000, value: '$100' },
-                      ].map((reward) => (
-                        <div key={reward.points} className="border border-gray-200 rounded-lg p-4 text-center">
-                          <Star className="h-8 w-8 text-fedex-orange mx-auto mb-2" />
-                          <p className="text-2xl font-bold text-gray-900">{reward.value}</p>
-                          <p className="text-sm text-gray-500">{reward.points.toLocaleString()} points</p>
-                          <Button
-                            variant="outline"
-                            className="w-full mt-3"
-                            disabled={2450 < reward.points}
-                          >
-                            {2450 >= reward.points ? 'Redeem' : 'Locked'}
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">How to Earn Points</h2>
-                    <div className="space-y-3">
-                      {[
-                        { action: 'Create a shipment', points: '+50 points' },
-                        { action: 'Refer a friend', points: '+200 points' },
-                        { action: 'Complete your profile', points: '+100 points' },
-                        { action: 'Ship internationally', points: '+150 points' },
-                      ].map((item, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <span className="text-gray-700">{item.action}</span>
-                          <span className="text-fedex-purple font-medium">{item.points}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </div>
+              <Download size={17} aria-hidden="true" />
+              Export my records
+            </button>
+            {message && (
+              <p className="workspace-feedback" role="status">
+                {message}
+              </p>
+            )}
+          </section>
+        </>
+      )}
+      {active === 'services' && (
+        <div className="workspace-stack">
+          <section className="workspace-panel">
+            <h2>Connect with official carrier services</h2>
+            <p className="workspace-panel-intro">
+              No payment cards, fabricated invoices, memberships, or rewards balances are stored in
+              this workspace.
+            </p>
+            <div className="workspace-resource-grid">
+              <div>
+                <h3>Account &amp; billing</h3>
+                <p>Use your actual FedEx account for billing, invoices, and carrier preferences.</p>
+                <ExternalLink href="https://www.fedex.com/secure-login/en-us/#/login-credentials">
+                  Open official account access
+                </ExternalLink>
+              </div>
+              <div>
+                <h3>Shipping &amp; labels</h3>
+                <p>
+                  Confirm current prices and create an actual shipping label on the carrier site.
+                </p>
+                <ExternalLink href="https://www.fedex.com/en-us/shipping/ship-manager/login.html">
+                  Open official shipping tools
+                </ExternalLink>
+              </div>
+              <div>
+                <h3>Returns &amp; claims</h3>
+                <p>
+                  Prepare local notes here, then complete real return or claim actions through
+                  official resources.
+                </p>
+                <Link to="/returns" className="service-text-link">
+                  Prepare return or claim notes <ArrowRight size={15} aria-hidden="true" />
+                </Link>
+              </div>
+            </div>
+          </section>
+          <ServiceNotice title="Independent workspace">
+            This project is not affiliated with FedEx. Workspace profiles, addresses, and plans do
+            not access or modify a live FedEx account.
+          </ServiceNotice>
         </div>
-      </div>
-    </div>
+      )}
+    </WorkspaceShell>
   );
 }

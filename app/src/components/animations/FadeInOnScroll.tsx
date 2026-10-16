@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
 
 interface FadeInOnScrollProps {
@@ -14,6 +14,7 @@ export default function FadeInOnScroll({
   direction = 'up',
   className = '',
 }: FadeInOnScrollProps) {
+  const reduceMotion = useReducedMotion();
   const directionOffset = {
     up: { y: 30, x: 0 },
     down: { y: -30, x: 0 },
@@ -23,7 +24,7 @@ export default function FadeInOnScroll({
 
   return (
     <motion.div
-      initial={{
+      initial={reduceMotion ? false : {
         opacity: 0,
         ...directionOffset[direction],
       }}
@@ -34,8 +35,8 @@ export default function FadeInOnScroll({
       }}
       viewport={{ once: true, amount: 0.3 }}
       transition={{
-        duration: 0.6,
-        delay,
+        duration: reduceMotion ? 0 : 0.6,
+        delay: reduceMotion ? 0 : delay,
         ease: [0.4, 0, 0.2, 1],
       }}
       className={className}

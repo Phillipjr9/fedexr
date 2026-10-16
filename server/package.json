@@ -1,10 +1,30 @@
 {
-  "name": "server",
-  "version": "0.0.0",
+  "name": "fedexr-accounts-api",
+  "version": "0.1.0",
   "private": true,
-  "description": "Minimal placeholder package.json so Vercel install --prefix server succeeds",
-  "scripts": {
-    "build": "echo \"no server build\""
+  "type": "module",
+  "description": "Server-managed workspace accounts and PostgreSQL records. Carrier services are separate.",
+  "engines": {
+    "node": ">=22.13.0"
   },
-  "dependencies": {}
+  "scripts": {
+    "dev": "node --env-file-if-exists=../.env src/index.js",
+    "start": "node --env-file-if-exists=../.env src/index.js",
+    "build": "node --check src/index.js && node --check src/service.js && node --check src/config.js && node --check src/fedex.js",
+    "test": "node --test --test-concurrency=1 test/*.test.js",
+    "db:plan": "node --env-file-if-exists=../.env scripts/migrate.js --plan",
+    "db:migrate": "node --env-file-if-exists=../.env scripts/migrate.js --apply",
+    "admin:grant": "node --env-file-if-exists=../.env scripts/grant-admin.js",
+    "images:plan": "node --env-file-if-exists=../.env scripts/migrate-images.js --plan",
+    "images:migrate": "node --env-file-if-exists=../.env scripts/migrate-images.js --apply"
+  },
+  "dependencies": {
+    "better-auth": "1.7.7",
+    "nodemailer": "10.1.1",
+    "pg": "8.23.0",
+    "sharp": "0.35.5"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.10"
+  }
 }

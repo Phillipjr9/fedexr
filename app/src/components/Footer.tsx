@@ -61,7 +61,7 @@ export default function Footer() {
                 <Link to="/store">Shipping supplies</Link>
               </li>
               <li>
-                <Link to="/dashboard">Your dashboard</Link>
+                <Link to="/admin">Shipment Dashboard</Link>
               </li>
               <li>
                 <Link to="/returns">Returns</Link>

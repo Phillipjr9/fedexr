@@ -3,10 +3,6 @@ import { isUSZip, isSampleService, localDate, type SampleServiceId } from '@/lib
 export const WORKSPACE_KEY = 'fedexr:workspace:v1';
 export const SESSION_KEY = 'fedexr:workspace-session:v1';
 export const ACCESS_EVENT = 'fedexr:workspace-access';
-export const DEMO_USER_ID = 'demo-workspace-user';
-export const DEMO_USER_EMAIL = 'demo@workspace.local';
-export const DEMO_ADMIN_USER_ID = 'demo-admin-workspace-user';
-export const DEMO_ADMIN_USER_EMAIL = 'demo-admin@workspace.local';
 export const DEMO_TRACKING_REFERENCE = 'LOCAL-12345';
 export type WorkspaceRole = 'member' | 'admin';
 export interface WorkspaceUser {
@@ -18,7 +14,6 @@ export interface WorkspaceUser {
   salt?: string;
   digest?: string;
   emailVerified?: boolean;
-  demo?: boolean;
   createdAt: string;
 }
 export interface WorkspaceAddress {
@@ -172,278 +167,6 @@ export const emptyWorkspace = (): WorkspaceData => ({
 });
 export const newId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 export const timestamp = () => new Date().toISOString();
-export function demoWorkspaceSeed(now = new Date()) {
-  const createdAt = now.toISOString();
-  const futureDate = (days: number) => {
-    const date = new Date(now);
-    date.setDate(date.getDate() + days);
-    return localDate(date);
-  };
-  const profile: WorkspaceUser = {
-    id: DEMO_USER_ID,
-    name: 'Demo User',
-    email: DEMO_USER_EMAIL,
-    role: 'member',
-    status: 'active',
-    demo: true,
-    createdAt,
-  };
-  const addresses: WorkspaceAddress[] = [
-    {
-      id: 'demo-address-home',
-      userId: DEMO_USER_ID,
-      label: 'Home',
-      name: 'Demo User',
-      street: '128 Sample Street',
-      city: 'Chicago',
-      region: 'IL',
-      postalCode: '60601',
-      country: 'United States',
-      isDefault: true,
-    },
-    {
-      id: 'demo-address-office',
-      userId: DEMO_USER_ID,
-      label: 'Office',
-      name: 'Demo User',
-      street: '450 Sample Avenue',
-      city: 'New York',
-      region: 'NY',
-      postalCode: '10001',
-      country: 'United States',
-      isDefault: false,
-    },
-  ];
-  const plans: ShipmentPlan[] = [
-    {
-      id: 'demo-plan-local-12345',
-      userId: DEMO_USER_ID,
-      reference: DEMO_TRACKING_REFERENCE,
-      recipient: 'Demo recipient — Riverbend order',
-      from: '60601',
-      to: '10001',
-      weight: '4.2',
-      service: 'ground',
-      shipDate: futureDate(2),
-      status: 'ready',
-      notes: 'Demo plan for reviewing the dashboard and sample tracking timeline.',
-      createdAt,
-      updatedAt: createdAt,
-    },
-    {
-      id: 'demo-plan-local-67890',
-      userId: DEMO_USER_ID,
-      reference: '748512903645',
-      recipient: 'Demo recipient — Office restock',
-      from: '10001',
-      to: '60601',
-      weight: '12.5',
-      service: '2day',
-      shipDate: futureDate(5),
-      status: 'draft',
-      notes: 'A second demo plan so the dashboard, filters, and tracking links have more than one record to review.',
-      createdAt,
-      updatedAt: createdAt,
-    },
-  ];
-  const shipments: PublicShipment[] = [
-    {
-      id: 'demo-shipment-local-12345',
-      trackingNumber: DEMO_TRACKING_REFERENCE,
-      userId: DEMO_USER_ID,
-      recipientLabel: 'Demo recipient — Riverbend order',
-      originCity: 'Chicago',
-      originRegion: 'IL',
-      originPostalCode: '60601',
-      destinationCity: 'New York',
-      destinationRegion: 'NY',
-      destinationPostalCode: '10001',
-      service: 'ground',
-      weight: '4.2',
-      shipDate: '2026-04-01',
-      estimatedDelivery: '2026-04-02',
-      status: 'delivered',
-      currentLocation: 'NEW YORK, NY',
-      holdReason: '',
-      publicNote: 'Sample public shipment created for the demo workspace.',
-      internalNote: 'Demo operations record. Internal notes are never shown on public tracking.',
-      isPublic: true,
-      archivedAt: null,
-      autoProgressEnabled: false,
-      autoProgressIntervalMinutes: 5,
-      autoProgressNextAt: '',
-      events: [
-        {
-          id: 'demo-shipment-local-12345-label',
-          status: 'label_created',
-          location: 'CHICAGO, IL',
-          note: 'Label created',
-          holdReason: '',
-          photo: '',
-          at: '2026-04-01T13:30:00Z',
-        },
-        {
-          id: 'demo-shipment-local-12345-pickup',
-          status: 'picked_up',
-          location: 'CHICAGO, IL',
-          note: 'Picked up',
-          holdReason: '',
-          photo: '',
-          at: '2026-04-01T14:00:00Z',
-        },
-        {
-          id: 'demo-shipment-local-12345-transit',
-          status: 'in_transit',
-          location: 'BROOKLYN, NY',
-          note: 'Arrived at local facility',
-          holdReason: '',
-          photo: '',
-          at: '2026-04-02T08:15:00Z',
-        },
-        {
-          id: 'demo-shipment-local-12345-out',
-          status: 'out_for_delivery',
-          location: 'NEW YORK, NY',
-          note: 'On vehicle for delivery',
-          holdReason: '',
-          photo: '',
-          at: '2026-04-02T10:30:00Z',
-        },
-        {
-          id: 'demo-shipment-local-12345-delivered',
-          status: 'delivered',
-          location: 'NEW YORK, NY',
-          note: 'Delivered',
-          holdReason: '',
-          photo: '',
-          at: '2026-04-02T12:45:00Z',
-        },
-      ],
-      createdBy: DEMO_ADMIN_USER_ID,
-      createdAt,
-      updatedAt: '2026-04-02T12:45:00Z',
-    },
-    {
-      id: 'demo-shipment-local-67890',
-      trackingNumber: '748512903645',
-      userId: DEMO_USER_ID,
-      recipientLabel: 'Demo recipient — Office restock',
-      originCity: 'New York',
-      originRegion: 'NY',
-      originPostalCode: '10001',
-      destinationCity: 'Chicago',
-      destinationRegion: 'IL',
-      destinationPostalCode: '60601',
-      service: '2day',
-      weight: '12.5',
-      shipDate: futureDate(0),
-      estimatedDelivery: futureDate(2),
-      status: 'in_transit',
-      currentLocation: 'NEW YORK, NY',
-      holdReason: '',
-      publicNote: 'Second demo shipment for testing administrator updates.',
-      internalNote: '',
-      isPublic: true,
-      archivedAt: null,
-      autoProgressEnabled: false,
-      autoProgressIntervalMinutes: 5,
-      autoProgressNextAt: '',
-      events: [
-        {
-          id: 'demo-shipment-local-67890-label',
-          status: 'label_created',
-          location: 'NEW YORK, NY',
-          note: 'Label created',
-          holdReason: '',
-          photo: '',
-          at: createdAt,
-        },
-        {
-          id: 'demo-shipment-local-67890-transit',
-          status: 'in_transit',
-          location: 'NEW YORK, NY',
-          note: 'Departed origin facility',
-          holdReason: '',
-          photo: '',
-          at: createdAt,
-        },
-      ],
-      createdBy: DEMO_ADMIN_USER_ID,
-      createdAt,
-      updatedAt: createdAt,
-    },
-  ];
-  return { profile, addresses, plans, shipments };
-}
-export function withDemoWorkspace(data: WorkspaceData, now = new Date()): WorkspaceData {
-  const seed = demoWorkspaceSeed(now);
-  const existing = data.users.find((entry) => entry.id === DEMO_USER_ID);
-  const profile: WorkspaceUser = existing
-    ? {
-        ...existing,
-        name: existing.name || seed.profile.name,
-        email: DEMO_USER_EMAIL,
-        role: 'member',
-        demo: true,
-      }
-    : seed.profile;
-  const users = existing
-    ? data.users.map((entry) => (entry.id === DEMO_USER_ID ? profile : entry))
-    : [...data.users, profile];
-  const addresses = [
-    ...data.addresses,
-    ...seed.addresses.filter(
-      (record) => !data.addresses.some((entry) => entry.id === record.id),
-    ),
-  ].slice(0, 300);
-  const plans = [
-    ...data.plans,
-    ...seed.plans.filter((record) => !data.plans.some((entry) => entry.id === record.id)),
-  ].slice(0, 500);
-  const shipments = [
-    ...data.shipments,
-    ...seed.shipments.filter(
-      (record) =>
-        !data.shipments.some(
-          (entry) =>
-            entry.id === record.id ||
-            entry.trackingNumber.toUpperCase() === record.trackingNumber.toUpperCase(),
-        ),
-    ),
-  ].slice(0, 500);
-  return { ...data, users, addresses, plans, shipments };
-}
-export function demoAdminProfile(now = new Date()): WorkspaceUser {
-  return {
-    id: DEMO_ADMIN_USER_ID,
-    name: 'Demo Administrator',
-    email: DEMO_ADMIN_USER_EMAIL,
-    role: 'admin',
-    status: 'active',
-    demo: true,
-    createdAt: now.toISOString(),
-  };
-}
-export function withDemoAdminWorkspace(data: WorkspaceData, now = new Date()): WorkspaceData {
-  const seeded = withDemoWorkspace(data, now);
-  const seed = demoAdminProfile(now);
-  const existing = seeded.users.find((entry) => entry.id === DEMO_ADMIN_USER_ID);
-  const profile: WorkspaceUser = existing
-    ? {
-        ...existing,
-        name: existing.name || seed.name,
-        email: DEMO_ADMIN_USER_EMAIL,
-        role: 'admin',
-        demo: true,
-      }
-    : seed;
-  return {
-    ...seeded,
-    users: existing
-      ? seeded.users.map((entry) => (entry.id === DEMO_ADMIN_USER_ID ? profile : entry))
-      : [...seeded.users, profile],
-  };
-}
 export const validEmail = (value: string) =>
   value.trim().length <= 160 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 const object = (value: unknown): value is Record<string, unknown> =>
@@ -469,20 +192,11 @@ export function readWorkspace(): WorkspaceData {
           !text(entry.createdAt, 40)
         )
           return false;
-        const demoProfile =
-          entry.demo === true &&
-          ((entry.id === DEMO_USER_ID &&
-            entry.email === DEMO_USER_EMAIL &&
-            entry.role === 'member') ||
-            (entry.id === DEMO_ADMIN_USER_ID &&
-              entry.email === DEMO_ADMIN_USER_EMAIL &&
-              entry.role === 'admin'));
         return (
-          demoProfile ||
-          (typeof entry.salt === 'string' &&
+          typeof entry.salt === 'string' &&
             /^[a-f0-9]{32}$/.test(entry.salt) &&
             typeof entry.digest === 'string' &&
-            /^[a-f0-9]{64}$/.test(entry.digest))
+            /^[a-f0-9]{64}$/.test(entry.digest)
         );
       })
       .slice(0, 100);

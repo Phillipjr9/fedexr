@@ -26,8 +26,6 @@ export interface WorkspaceContextValue {
     passphrase: string,
     owner?: boolean,
   ) => Promise<void | { requiresVerification: boolean }>;
-  enterDemoAccess: () => Promise<void>;
-  enterAdminDemoAccess: () => Promise<void>;
   signOut: () => Result;
   saveAddress: (input: AddressInput, id?: string) => Result<WorkspaceAddress>;
   removeAddress: (id: string) => Result;

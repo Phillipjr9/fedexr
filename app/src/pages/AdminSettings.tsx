@@ -21,7 +21,6 @@ import {
 import WorkspaceShell, { type WorkspaceSection } from '@/components/workspace/WorkspaceShell';
 import PlanCollection from '@/components/workspace/PlanCollection';
 import ProfilePanel from '@/components/workspace/ProfilePanel';
-import PublicShipmentsPanel from '@/components/workspace/PublicShipmentsPanel';
 import TrackingAttachments from '@/components/workspace/TrackingAttachments';
 import CarrierShipmentPanel from '@/components/workspace/CarrierShipmentPanel';
 import { ServiceNotice } from '@/components/ServiceLayout';
@@ -34,7 +33,6 @@ import { downloadText } from '@/lib/localDownloads';
 const sections: WorkspaceSection[] = [
   { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={19} aria-hidden="true" /> },
   { id: 'plans', label: 'Shipment plans', icon: <Package size={19} aria-hidden="true" /> },
-  { id: 'shipments', label: 'Public shipments', icon: <Truck size={19} aria-hidden="true" /> },
   { id: 'carrier', label: 'FedEx API', icon: <Cloud size={19} aria-hidden="true" /> },
   { id: 'members', label: 'Workspace profiles', icon: <Users size={19} aria-hidden="true" /> },
   {
@@ -291,8 +289,8 @@ export default function AdminSettings() {
               <Truck size={26} color="#4d148c" aria-hidden="true" />
             </div>
             <div className="workspace-form-actions">
-              <Link className="brand-button workspace-primary" to="/admin/settings?tab=shipments">
-                Manage public shipments
+              <Link className="brand-button workspace-primary" to="/admin">
+                Go to Shipment Dashboard
               </Link>
               <Link
                 className="brand-button brand-button-outline"
@@ -336,7 +334,7 @@ export default function AdminSettings() {
                     </div>
                     <Link
                       className="service-text-link"
-                      to="/admin/settings?tab=shipments"
+                      to="/admin"
                       aria-label={`Open ${shipment.trackingNumber} in Public shipments`}
                     >
                       Manage
@@ -356,7 +354,7 @@ export default function AdminSettings() {
                     </div>
                     <Link
                       className="service-text-link"
-                      to="/admin/settings?tab=shipments"
+                      to="/admin"
                       aria-label={`Open ${shipment.trackingNumber} in Public shipments`}
                     >
                       Manage
@@ -491,7 +489,6 @@ export default function AdminSettings() {
         </div>
       )}
       {active === 'plans' && <PlanCollection plans={data.plans} admin />}
-      {active === 'shipments' && <PublicShipmentsPanel />}
       {active === 'carrier' && (
         <section className="workspace-panel" aria-labelledby="carrier-settings-heading">
           <div className="workspace-panel-heading">

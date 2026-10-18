@@ -4,7 +4,6 @@ import { ServiceNotice } from '@/components/ServiceLayout';
 
 export default function ProfilePanel() {
   const { user, updateProfile, changePassphrase, mode } = useWorkspace();
-  const demo = Boolean(user?.demo);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [current, setCurrent] = useState('');
@@ -52,10 +51,6 @@ export default function ProfilePanel() {
         <h2>Profile details</h2>
         <p className="workspace-panel-intro">
           Your workspace profile is separate from any carrier account.
-          {demo &&
-            (user?.role === 'admin'
-              ? ' You are using the one-click admin demo; its email stays fixed so admin demo login can reopen it.'
-              : ' You are using the one-click demo profile; its email stays fixed so demo login can reopen it.')}
         </p>
         <form onSubmit={profile} noValidate>
           <div className="workspace-form-grid">
@@ -78,14 +73,7 @@ export default function ProfilePanel() {
                 onChange={(event) => setEmail(event.target.value)}
                 maxLength={160}
                 required
-                disabled={demo}
-                aria-describedby={demo ? 'profile-demo-email-note' : undefined}
               />
-              {demo && (
-                <small id="profile-demo-email-note">
-                  Demo email is fixed for one-click access.
-                </small>
-              )}
             </div>
           </div>
           <div className="workspace-form-actions">
@@ -96,18 +84,13 @@ export default function ProfilePanel() {
         </form>
       </section>
       <section className="workspace-panel">
-        <h2>{demo ? 'Demo access' : 'Change workspace passphrase'}</h2>
+        <h2>Change workspace passphrase</h2>
         <p className="workspace-panel-intro">
-          {demo
-            ? user?.role === 'admin'
-              ? 'One-click admin login has no passphrase and does not grant server permissions. Sign out and set up a credentialed administrator when you want passphrase-protected browser-local administration.'
-              : 'One-click demo login has no passphrase and is not production authentication. Sign out and create your own workspace profile when you want passphrase-protected browser-local access.'
-            : mode === 'server'
-              ? 'The account server stores a passphrase hash, not a plaintext passphrase. Changing it revokes your other sessions.'
-              : 'A passphrase-derived hash is saved locally. No plaintext passphrase is stored.'}
+          {mode === 'server'
+            ? 'The account server stores a passphrase hash, not a plaintext passphrase. Changing it revokes your other sessions.'
+            : 'A passphrase-derived hash is saved locally. No plaintext passphrase is stored.'}
         </p>
-        {!demo && (
-          <form onSubmit={credential} noValidate>
+        <form onSubmit={credential} noValidate>
           <div className="workspace-form-grid">
             {(
               [
@@ -130,13 +113,12 @@ export default function ProfilePanel() {
               </div>
             ))}
           </div>
-            <div className="workspace-form-actions">
-              <button type="submit" className="brand-button workspace-primary" disabled={busy}>
-                {busy ? 'Updating…' : 'Update workspace passphrase'}
-              </button>
-            </div>
-          </form>
-        )}
+          <div className="workspace-form-actions">
+            <button type="submit" className="brand-button workspace-primary" disabled={busy}>
+              {busy ? 'Updating…' : 'Update workspace passphrase'}
+            </button>
+          </div>
+        </form>
       </section>
       {error && (
         <p className="workspace-feedback error" role="alert">

@@ -26,9 +26,10 @@ import RateCalculator from '@/pages/RateCalculator';
 import PickupPage from '@/pages/PickupPage';
 import { ServiceNotice } from '@/components/ServiceLayout';
 import AdminSettings from '@/pages/AdminSettings';
+import AdminDashboard from '@/pages/AdminDashboard';
 import AdminLogin from '@/pages/AdminLogin';
+import AdminAccessGate from '@/components/workspace/AdminAccessGate';
 import ShipmentWizard from '@/components/wizard/ShipmentWizard';
-import UserDashboard from '@/components/dashboard/UserDashboard';
 import SuppliesStore from '@/components/store/SuppliesStore';
 import ReturnsPortal from '@/components/returns/ReturnsPortal';
 import './App.css';
@@ -60,11 +61,6 @@ function ScrollToTop() {
     window.scrollTo(0, 0);
   }, [pathname]);
   return null;
-}
-
-function AdminIndexRedirect() {
-  const location = useLocation();
-  return <Navigate to={`/admin/login${location.search}`} replace />;
 }
 
 function NotFoundPage() {
@@ -106,23 +102,30 @@ function App() {
                 <Route path="/support" element={<SupportPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/rate-calculator" element={<RateCalculator />} />
-                <Route path="/admin" element={<AdminIndexRedirect />} />
+                <Route
+                  path="/admin"
+                  element={
+                    <AdminAccessGate>
+                      <ProtectedWorkspace admin>
+                        <AdminDashboard />
+                      </ProtectedWorkspace>
+                    </AdminAccessGate>
+                  }
+                />
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route
                   path="/admin/settings"
                   element={
-                    <ProtectedWorkspace admin>
-                      <AdminSettings />
-                    </ProtectedWorkspace>
+                    <AdminAccessGate>
+                      <ProtectedWorkspace admin>
+                        <AdminSettings />
+                      </ProtectedWorkspace>
+                    </AdminAccessGate>
                   }
                 />
                 <Route
                   path="/dashboard"
-                  element={
-                    <ProtectedWorkspace>
-                      <UserDashboard />
-                    </ProtectedWorkspace>
-                  }
+                  element={<Navigate to="/admin/settings" replace />}
                 />
                 <Route path="/store" element={<SuppliesStore />} />
                 <Route path="/returns" element={<ReturnsPortal />} />

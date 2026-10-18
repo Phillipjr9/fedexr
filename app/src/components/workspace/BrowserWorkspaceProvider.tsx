@@ -2,10 +2,6 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { WorkspaceContext, type WorkspaceContextValue } from '@/context/workspace';
 import {
   ACCESS_EVENT,
-  DEMO_ADMIN_USER_EMAIL,
-  DEMO_ADMIN_USER_ID,
-  DEMO_USER_EMAIL,
-  DEMO_USER_ID,
   WORKSPACE_KEY,
   addressError,
   credentialError,
@@ -18,8 +14,6 @@ import {
   timestamp,
   validEmail,
   verifyCredential,
-  withDemoAdminWorkspace,
-  withDemoWorkspace,
   writeWorkspace,
   type AddressInput,
   type PlanInput,
@@ -135,12 +129,6 @@ export default function BrowserWorkspaceProvider({ children }: { children: React
     const profile = dataRef.current.users.find(
       (entry) => entry.email === email.trim().toLowerCase(),
     );
-    if (profile?.demo)
-      throw new Error(
-        profile.role === 'admin'
-          ? 'Use the one-click admin login on this page. The admin demo profile has no passphrase.'
-          : 'Use the one-click demo login on this page. The demo profile has no passphrase.',
-      );
     if (
       !profile ||
       profile.status !== 'active' ||
@@ -161,19 +149,11 @@ export default function BrowserWorkspaceProvider({ children }: { children: React
     const current = dataRef.current;
     if (current.users.length >= 100)
       throw new Error('This browser workspace has reached its profile limit.');
-    if (owner && current.users.some((entry) => entry.role === 'admin' && !entry.demo))
+    if (owner && current.users.some((entry) => entry.role === 'admin'))
       throw new Error(
         'An administrator already exists in this browser. Use administrator sign-in.',
       );
     const normalizedEmail = email.trim().toLowerCase();
-    if (normalizedEmail === DEMO_USER_EMAIL)
-      throw new Error(
-        'That email is reserved for the one-click demo login. Choose another workspace email.',
-      );
-    if (normalizedEmail === DEMO_ADMIN_USER_EMAIL)
-      throw new Error(
-        'That email is reserved for the one-click admin login. Choose another workspace email.',
-      );
     if (current.users.some((entry) => entry.email === normalizedEmail))
       throw new Error(
         'A workspace profile already uses that email. Sign in to that profile or use a different email.',
@@ -185,7 +165,7 @@ export default function BrowserWorkspaceProvider({ children }: { children: React
     if (
       dataRef.current.users.some(
         (entry) =>
-          entry.email === normalizedEmail || (owner && entry.role === 'admin' && !entry.demo),
+          entry.email === normalizedEmail || (owner && entry.role === 'admin'),
       )
     )
       throw new Error('That profile or administrator was created already. Sign in instead.');
@@ -198,65 +178,14 @@ export default function BrowserWorkspaceProvider({ children }: { children: React
       ...credential,
       createdAt: timestamp(),
     };
-    const retainedUsers = owner
-      ? dataRef.current.users.filter((entry) => entry.id !== DEMO_ADMIN_USER_ID)
-      : dataRef.current.users;
     publish(
       activity(
-        { ...dataRef.current, users: [...retainedUsers, profile] },
+        { ...dataRef.current, users: [...dataRef.current.users, profile] },
         owner ? 'Administrator workspace initialized' : 'Workspace profile created',
         profile.id,
       ),
     );
     enter(profile.id);
-  }
-  async function enterDemoAccess() {
-    const current = dataRef.current;
-    const existing = current.users.find((entry) => entry.id === DEMO_USER_ID);
-    if (current.users.some((entry) => entry.email === DEMO_USER_EMAIL && entry.id !== DEMO_USER_ID))
-      throw new Error(
-        'A browser profile already uses the demo email. Demo login was not opened so that profile stays separate.',
-      );
-    if (existing && existing.status !== 'active')
-      throw new Error(
-        'The demo profile is suspended in this browser. An administrator can activate it from workspace settings.',
-      );
-    if (!existing && current.users.length >= 100)
-      throw new Error('This browser workspace has reached its profile limit. Demo login was not opened.');
-    publish(
-      activity(withDemoWorkspace(current), 'Demo workspace opened', DEMO_USER_ID),
-    );
-    enter(DEMO_USER_ID);
-  }
-  async function enterAdminDemoAccess() {
-    const current = dataRef.current;
-    if (
-      current.users.some(
-        (entry) => entry.email === DEMO_ADMIN_USER_EMAIL && entry.id !== DEMO_ADMIN_USER_ID,
-      )
-    )
-      throw new Error(
-        'A browser profile already uses the admin demo email. Admin demo login was not opened so that profile stays separate.',
-      );
-    if (current.users.some((entry) => entry.role === 'admin' && !entry.demo))
-      throw new Error(
-        'One-click admin login is unavailable because a credentialed administrator already exists in this browser. Use administrator sign-in.',
-      );
-    const existing = current.users.find((entry) => entry.id === DEMO_ADMIN_USER_ID);
-    if (existing && existing.status !== 'active')
-      throw new Error('The admin demo profile is suspended in this browser.');
-    if (!existing && current.users.length >= 100)
-      throw new Error(
-        'This browser workspace has reached its profile limit. Admin demo login was not opened.',
-      );
-    publish(
-      activity(
-        withDemoAdminWorkspace(current),
-        'Demo administrator workspace opened',
-        DEMO_ADMIN_USER_ID,
-      ),
-    );
-    enter(DEMO_ADMIN_USER_ID);
   }
   function signOut() {
     storeSession(null);
@@ -764,18 +693,6 @@ export default function BrowserWorkspaceProvider({ children }: { children: React
       throw new Error('Enter a display name (1–60 characters) and a valid workspace email.');
     const normalized = email.trim().toLowerCase();
     const current = dataRef.current;
-    if (profile.demo && normalized !== profile.email)
-      throw new Error(
-        'Keep the demo email unchanged so one-click demo login can find this profile. Create your own profile to use another email.',
-      );
-    if (!profile.demo && normalized === DEMO_USER_EMAIL)
-      throw new Error(
-        'That email is reserved for the one-click demo login. Choose another workspace email.',
-      );
-    if (!profile.demo && normalized === DEMO_ADMIN_USER_EMAIL)
-      throw new Error(
-        'That email is reserved for the one-click admin login. Choose another workspace email.',
-      );
     if (current.users.some((entry) => entry.id !== profile.id && entry.email === normalized))
       throw new Error('Another workspace profile uses that email.');
     publish(
@@ -792,10 +709,6 @@ export default function BrowserWorkspaceProvider({ children }: { children: React
   }
   async function changePassphrase(currentPhrase: string, next: string, confirmation: string) {
     const profile = requireUser();
-    if (profile.demo)
-      throw new Error(
-        'The demo profile has no passphrase. Sign out and create your own workspace profile to set one.',
-      );
     const error = credentialError(profile.name, profile.email, next, confirmation);
     if (error) throw new Error(error);
     if (!(await verifyCredential(profile, currentPhrase)))
@@ -865,8 +778,6 @@ export default function BrowserWorkspaceProvider({ children }: { children: React
     user,
     signIn,
     register,
-    enterDemoAccess,
-    enterAdminDemoAccess,
     signOut,
     saveAddress,
     removeAddress,

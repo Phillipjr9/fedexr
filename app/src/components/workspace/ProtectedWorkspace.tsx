@@ -28,11 +28,10 @@ export default function ProtectedWorkspace({
       </div>
     );
   if (!user || (admin && user.role !== 'admin')) {
-    const target = admin ? '/admin/login' : '/login';
     return (
       <Navigate
         replace
-        to={`${target}?next=${encodeURIComponent(location.pathname + location.search)}`}
+        to={`/admin/login?next=${encodeURIComponent(location.pathname + location.search)}`}
       />
     );
   }

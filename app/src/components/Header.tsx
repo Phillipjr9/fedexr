@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, Menu, Search, UserCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { ChevronDown, Menu, Search, UserCircle, ArrowRight, ShieldCheck, Settings, Truck } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -7,7 +7,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -48,8 +47,8 @@ const navigation = [
     href: '/tracking',
     links: [
       { label: 'Track a package', href: '/tracking' },
-      { label: 'Your planning workspace', href: '/dashboard' },
-      { label: 'Saved shipment plans', href: '/dashboard?tab=plans' },
+      { label: 'Admin dashboard', href: '/admin' },
+      { label: 'Manage shipments', href: '/admin' },
     ],
   },
   {
@@ -140,10 +139,10 @@ const searchPages = [
     keywords: 'boxes envelope tape',
   },
   {
-    label: 'Your dashboard',
-    description: 'Manage browser-local shipment plans and addresses',
-    href: '/dashboard',
-    keywords: 'account profile history deliveries plans workspace',
+    label: 'Admin dashboard',
+    description: 'Manage shipments, profiles, and workspace settings',
+    href: '/admin',
+    keywords: 'admin dashboard manage shipments workspace',
   },
   {
     label: 'Admin login',
@@ -156,7 +155,7 @@ const searchPages = [
 export default function Header() {
   const { t } = useTranslation();
   const { user } = useWorkspace();
-  const accountPath = user ? (user.role === 'admin' ? '/admin/settings' : '/dashboard') : '/login';
+  const accountPath = user?.role === 'admin' ? '/admin' : '/admin/login';
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -211,49 +210,51 @@ export default function Header() {
               <Link
                 to={accountPath}
                 className="header-account"
-                aria-label={user ? 'Open your workspace' : 'Sign up or log in'}
+                aria-label={user?.role === 'admin' ? 'Open admin dashboard' : 'Admin login'}
               >
-                <span>{user ? 'My Workspace' : 'Sign Up or Log In'}</span>
-                <UserCircle size={26} strokeWidth={1.25} aria-hidden="true" />
+                <span>{user?.role === 'admin' ? 'Admin Dashboard' : 'Admin Login'}</span>
+                <ShieldCheck size={26} strokeWidth={1.25} aria-hidden="true" />
               </Link>
-              <DropdownMenu modal={false}>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="header-icon-button header-account-toggle"
-                    aria-label="Account access options"
+              {user?.role === 'admin' && (
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="header-icon-button header-account-toggle"
+                      aria-label="Account access options"
+                    >
+                      <ChevronDown size={15} aria-hidden="true" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    sideOffset={8}
+                    className="header-dropdown header-account-dropdown"
                   >
-                    <ChevronDown size={15} aria-hidden="true" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  sideOffset={8}
-                  className="header-dropdown header-account-dropdown"
-                >
-                  <DropdownMenuLabel className="header-account-menu-label">
-                    Independent workspace
-                  </DropdownMenuLabel>
-                  <DropdownMenuItem asChild className="header-dropdown-link">
-                    <Link to={user ? '/dashboard' : '/login'}>
-                      <UserCircle size={18} aria-hidden="true" />
-                      {user ? 'Personal workspace' : 'Personal login'}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="header-dropdown-link">
-                    <Link to={user ? '/dashboard?tab=profile' : '/login?mode=create'}>
-                      {user ? 'Profile settings' : 'Create profile'}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild className="header-dropdown-link">
-                    <Link to={user?.role === 'admin' ? '/admin/settings' : '/admin/login'}>
-                      <ShieldCheck size={18} aria-hidden="true" />
-                      {user?.role === 'admin' ? 'Admin dashboard' : 'Admin login'}
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <DropdownMenuLabel className="header-account-menu-label">
+                      Administrator
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem asChild className="header-dropdown-link">
+                      <Link to="/admin">
+                        <Truck size={18} aria-hidden="true" />
+                        Shipment Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="header-dropdown-link">
+                      <Link to="/admin/settings">
+                        <Settings size={18} aria-hidden="true" />
+                        Workspace Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="header-dropdown-link">
+                      <Link to="/admin/settings?tab=security">
+                        <UserCircle size={18} aria-hidden="true" />
+                        Profile settings
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
 
             <Dialog
@@ -352,9 +353,6 @@ export default function Header() {
                   ))}
                 </nav>
                 <div className="mobile-quick-links">
-                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                    Your dashboard
-                  </Link>
                   <Link to="/store" onClick={() => setMobileMenuOpen(false)}>
                     Shipping supplies
                   </Link>
@@ -364,16 +362,12 @@ export default function Header() {
                   <Link to="/rate-calculator" onClick={() => setMobileMenuOpen(false)}>
                     Get a quote
                   </Link>
-                  <Link to={accountPath} onClick={() => setMobileMenuOpen(false)}>
-                    <UserCircle size={23} aria-hidden="true" />{' '}
-                    {user ? 'My Workspace' : 'Sign Up or Log In'}
-                  </Link>
                   <Link
-                    to={user?.role === 'admin' ? '/admin/settings' : '/admin/login'}
+                    to={user?.role === 'admin' ? '/admin' : '/admin/login'}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <ShieldCheck size={21} aria-hidden="true" />
-                    {user?.role === 'admin' ? 'Admin dashboard' : 'Admin login'}
+                    {user?.role === 'admin' ? 'Shipment Dashboard' : 'Admin login'}
                   </Link>
                 </div>
               </SheetContent>

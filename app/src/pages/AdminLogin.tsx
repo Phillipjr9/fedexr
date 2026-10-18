@@ -1,5 +1,10 @@
 import WorkspaceAccess from '@/components/workspace/WorkspaceAccess';
+import AdminAccessGate from '@/components/workspace/AdminAccessGate';
 
 export default function AdminLogin() {
-  return <WorkspaceAccess key="admin-login" admin />;
+  return (
+    <AdminAccessGate>
+      <WorkspaceAccess admin />
+    </AdminAccessGate>
+  );
 }

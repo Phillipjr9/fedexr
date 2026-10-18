@@ -56,11 +56,10 @@ import {
   latestShipmentEvent,
   normalizeTrackingNumber,
   placeLabel,
-  samplePublicShipment,
   shipmentStatusLabel,
 } from '@/lib/publicShipments';
 import { sampleServices } from '@/lib/shipping';
-import { DEMO_TRACKING_REFERENCE, type PublicShipment } from '@/lib/workspace';
+import type { PublicShipment } from '@/lib/workspace';
 import { siteImages } from '@/lib/siteAssets';
 import '@/tracking.css';
 
@@ -163,15 +162,13 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
   useEffect(() => {
     if (!submitted || mode === 'browser') return;
     let active = true;
-    const normalized = normalizeTrackingNumber(submitted);
     void lookupRef
       .current(submitted)
       .then((shipment) => {
         if (active)
           setLookup({
             reference: submitted,
-            shipment:
-              shipment || (normalized === DEMO_TRACKING_REFERENCE ? samplePublicShipment() : null),
+            shipment,
             loading: false,
             error: '',
           });
@@ -180,14 +177,9 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
         if (active)
           setLookup({
             reference: submitted,
-            shipment: normalized === DEMO_TRACKING_REFERENCE ? samplePublicShipment() : null,
+            shipment: null,
             loading: false,
-            error:
-              normalized === DEMO_TRACKING_REFERENCE
-                ? ''
-                : cause instanceof Error
-                  ? cause.message
-                  : 'Tracking lookup is unavailable.',
+            error: cause instanceof Error ? cause.message : 'Tracking lookup is unavailable.',
           });
       });
     return () => {
@@ -303,8 +295,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
           entry.isPublic &&
           !entry.archivedAt &&
           normalizeTrackingNumber(entry.trackingNumber) === normalizedSubmitted,
-      ) ||
-      (normalizedSubmitted === DEMO_TRACKING_REFERENCE ? samplePublicShipment() : null)
+      ) || null
     : null;
   const activeLookup =
     mode === 'browser'
@@ -319,12 +310,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
   const delivered = shipment?.status === 'delivered';
   const onHold = shipment?.status === 'on_hold';
   const holdIssue = onHold && shipment ? holdReasonLabel(shipment.holdReason) : '';
-  const sampleReference = normalizeTrackingNumber(submitted) === DEMO_TRACKING_REFERENCE;
-  const statusLabel = shipment
-    ? sampleReference && delivered
-      ? 'Delivered (sample)'
-      : shipmentStatusLabel(shipment.status)
-    : '';
+  const statusLabel = shipment ? shipmentStatusLabel(shipment.status) : '';
   const journeyEvents = shipment ? displayShipmentEvents(shipment) : [];
   const stagePhotoFor = (status: string) => {
     if (!shipment) return '';
@@ -658,15 +644,11 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
               </CarrierLink>
             </nav>
             <p className="fx-entry-instruction">
-              Enter the tracking number supplied by the administrator, or explore the sample
-              shipment.
+              Enter the tracking number supplied by the administrator to view shipment status.
             </p>
             {form}
             <div className="fx-entry-help">
               <Link to="/support">Need help?</Link>
-              <button type="button" className="fx-text-button" onClick={() => track('LOCAL-12345')}>
-                View a sample shipment
-              </button>
             </div>
             <p className="fx-entry-limit">
               One reference at a time in this preview. Reference, TCN, and proof-of-delivery

@@ -1,5 +1,5 @@
-import WorkspaceAccess from '@/components/workspace/WorkspaceAccess';
+import { Navigate } from 'react-router-dom';
 
 export default function LoginPage() {
-  return <WorkspaceAccess />;
+  return <Navigate to="/admin/login" replace />;
 }

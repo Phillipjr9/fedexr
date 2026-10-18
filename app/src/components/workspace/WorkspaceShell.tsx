@@ -45,7 +45,6 @@ export default function WorkspaceShell({
           <span>
             <ShieldCheck size={15} aria-hidden="true" />
             {admin ? 'Administrator workspace' : 'Personal workspace'} ·{' '}
-            {user?.demo ? (user.role === 'admin' ? 'Demo administrator · ' : 'Demo user · ') : ''}
             {mode === 'server' ? 'Server-backed records' : 'Browser-local records'}
           </span>
         </div>
@@ -125,8 +124,8 @@ export default function WorkspaceShell({
               </a>
             </div>
             {user?.role === 'admin' && (
-              <Link className="workspace-role-switch" to={admin ? '/dashboard' : '/admin/settings'}>
-                {admin ? 'Open personal workspace' : 'Open administration'}
+              <Link className="workspace-role-switch" to={admin ? '/admin/settings' : '/admin'}>
+                {admin ? 'Workspace Settings' : 'Shipment Dashboard'}
                 <ArrowUpRight size={14} aria-hidden="true" />
               </Link>
             )}

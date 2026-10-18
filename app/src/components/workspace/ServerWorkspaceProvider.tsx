@@ -204,16 +204,6 @@ export default function ServerWorkspaceProvider({ children }: { children: ReactN
     signIn,
     signOut,
     register,
-    enterDemoAccess: async () => {
-      throw new Error(
-        'One-click demo login is available only in browser-local mode. Server accounts require verified sign-in.',
-      );
-    },
-    enterAdminDemoAccess: async () => {
-      throw new Error(
-        'One-click admin login is available only for the browser-local demo administrator. Server administrator access requires a verified server-authorized account.',
-      );
-    },
     saveAddress,
     savePlan,
     savePublicShipment,

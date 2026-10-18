@@ -26,11 +26,7 @@ import { downloadText } from '@/lib/localDownloads';
 import { siteImages } from '@/lib/siteAssets';
 import { generateSampleAddress } from '@/lib/addressGenerator';
 import { holdReasonLabel, placeLabel, shipmentStatusLabel } from '@/lib/publicShipments';
-import {
-  DEMO_TRACKING_REFERENCE,
-  type AddressInput,
-  type WorkspaceAddress,
-} from '@/lib/workspace';
+import { type AddressInput, type WorkspaceAddress } from '@/lib/workspace';
 
 const sections: WorkspaceSection[] = [
   { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={19} aria-hidden="true" /> },
@@ -102,30 +98,6 @@ export default function UserDashboard() {
               </div>
             ))}
           </div>
-          {user?.demo && (
-            <section
-              className="workspace-panel workspace-demo-tracking"
-              aria-labelledby="demo-tracking-heading"
-            >
-              <span className="workspace-demo-tracking-icon" aria-hidden="true">
-                <Route size={27} strokeWidth={1.5} />
-              </span>
-              <div>
-                <p className="service-eyebrow">Demo tracking monitor</p>
-                <h2 id="demo-tracking-heading">Monitor a sample shipment</h2>
-                <p>
-                  Open the FedEx-style sample timeline for {DEMO_TRACKING_REFERENCE}. The journey is
-                  simulated for design review and is not connected to a live carrier shipment.
-                </p>
-              </div>
-              <Link
-                className="brand-button workspace-primary"
-                to={`/tracking?number=${encodeURIComponent(DEMO_TRACKING_REFERENCE)}`}
-              >
-                View sample tracking <ArrowRight size={16} aria-hidden="true" />
-              </Link>
-            </section>
-          )}
           {assignedShipments.length > 0 && (
             <section className="workspace-panel" aria-labelledby="assigned-shipments-heading">
               <div className="workspace-panel-heading">

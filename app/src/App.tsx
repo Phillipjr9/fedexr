@@ -5,7 +5,6 @@ import {
   Routes,
   Route,
   Link,
-  Navigate,
   useLocation,
 } from 'react-router-dom';
 import './i18n';
@@ -29,6 +28,8 @@ import AdminSettings from '@/pages/AdminSettings';
 import AdminDashboard from '@/pages/AdminDashboard';
 import AdminLogin from '@/pages/AdminLogin';
 import AdminAccessGate from '@/components/workspace/AdminAccessGate';
+import UserDashboard from '@/components/dashboard/UserDashboard';
+import AccountRecovery from '@/components/workspace/AccountRecovery';
 import ShipmentWizard from '@/components/wizard/ShipmentWizard';
 import SuppliesStore from '@/components/store/SuppliesStore';
 import ReturnsPortal from '@/components/returns/ReturnsPortal';
@@ -101,6 +102,7 @@ function App() {
                 <Route path="/locations" element={<LocationsPage />} />
                 <Route path="/support" element={<SupportPage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/account-recovery" element={<AccountRecovery />} />
                 <Route path="/rate-calculator" element={<RateCalculator />} />
                 <Route
                   path="/admin"
@@ -125,7 +127,11 @@ function App() {
                 />
                 <Route
                   path="/dashboard"
-                  element={<Navigate to="/admin/settings" replace />}
+                  element={
+                    <ProtectedWorkspace>
+                      <UserDashboard />
+                    </ProtectedWorkspace>
+                  }
                 />
                 <Route path="/store" element={<SuppliesStore />} />
                 <Route path="/returns" element={<ReturnsPortal />} />

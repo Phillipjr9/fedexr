@@ -114,7 +114,8 @@ html {
 .mobile-navigation-sheet nav { margin-top: 25px; }
 .mobile-navigation-sheet nav a { display: flex; align-items: center; justify-content: space-between; padding: 17px 0; border-bottom: 1px solid rgb(255 255 255 / 20%); font-size: 18px; }
 .mobile-quick-links { display: grid; gap: 21px; padding-top: 24px; font-size: 14px; }
-.mobile-quick-links a:last-child { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.mobile-quick-links a:last-of-type, .mobile-quick-links .mobile-sign-out { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.mobile-sign-out { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
 
 /* Shared brand actions */
 .brand-text-link {

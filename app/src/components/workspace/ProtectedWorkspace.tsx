@@ -2,6 +2,13 @@ import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useWorkspace } from '@/context/workspace';
 
+/**
+ * Route guard.
+ *
+ * `admin` routes require the administrator role and fall back to the hidden
+ * admin entrance. Member routes accept any signed-in profile (administrators
+ * included) and fall back to the public sign-in page.
+ */
 export default function ProtectedWorkspace({
   children,
   admin = false,
@@ -11,6 +18,8 @@ export default function ProtectedWorkspace({
 }) {
   const { user, loading, serviceError } = useWorkspace();
   const location = useLocation();
+  const entrance = admin ? '/admin/login' : '/login';
+
   if (loading)
     return (
       <div className="site-container py-12" role="status">
@@ -28,12 +37,7 @@ export default function ProtectedWorkspace({
       </div>
     );
   if (!user || (admin && user.role !== 'admin')) {
-    return (
-      <Navigate
-        replace
-        to={`/admin/login?next=${encodeURIComponent(location.pathname + location.search)}`}
-      />
-    );
+    return <Navigate replace to={`${entrance}?next=${encodeURIComponent(location.pathname + location.search)}`} />;
   }
   return children;
 }

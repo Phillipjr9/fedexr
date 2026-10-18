@@ -1,53 +1,19 @@
 import type { AddressInput } from './workspace';
+import { US_PLACES, type UsPlace } from './usPlaces';
 
 /**
- * Free, fully local sample-address generation. No external API is called and
- * no real person's address is produced: streets are invented from common
- * street names and paired with real city/state/ZIP-prefix combinations so the
- * results look plausible for testing routes. Generated addresses are samples
- * for this workspace only — they are not verified or deliverable addresses.
+ * Free, fully local address filling.
+ *
+ * No geocoding provider, no API key, and no network request — the city / state /
+ * ZIP data is bundled in `@/lib/usPlaces`, so both the one-click route and the
+ * address autocomplete cost nothing to run.
+ *
+ * Cities, states and ZIPs come from the bundled real dataset. Street lines are
+ * invented locally (no real resident's address is ever reproduced), so any
+ * generated street is a placeholder to edit before it is used.
  */
 export const SAMPLE_ADDRESS_NOTICE =
-  'Sample address generated locally in this workspace. It is not a verified or deliverable address — edit it before relying on it.';
-
-interface SamplePlace {
-  city: string;
-  region: string;
-  postalPrefix: string;
-}
-
-const places: SamplePlace[] = [
-  { city: 'New York', region: 'NY', postalPrefix: '100' },
-  { city: 'Los Angeles', region: 'CA', postalPrefix: '900' },
-  { city: 'Chicago', region: 'IL', postalPrefix: '606' },
-  { city: 'Houston', region: 'TX', postalPrefix: '770' },
-  { city: 'Phoenix', region: 'AZ', postalPrefix: '850' },
-  { city: 'Philadelphia', region: 'PA', postalPrefix: '191' },
-  { city: 'San Antonio', region: 'TX', postalPrefix: '782' },
-  { city: 'San Diego', region: 'CA', postalPrefix: '921' },
-  { city: 'Dallas', region: 'TX', postalPrefix: '752' },
-  { city: 'Austin', region: 'TX', postalPrefix: '733' },
-  { city: 'Jacksonville', region: 'FL', postalPrefix: '322' },
-  { city: 'Columbus', region: 'OH', postalPrefix: '432' },
-  { city: 'Charlotte', region: 'NC', postalPrefix: '282' },
-  { city: 'Indianapolis', region: 'IN', postalPrefix: '462' },
-  { city: 'San Francisco', region: 'CA', postalPrefix: '941' },
-  { city: 'Seattle', region: 'WA', postalPrefix: '981' },
-  { city: 'Denver', region: 'CO', postalPrefix: '802' },
-  { city: 'Nashville', region: 'TN', postalPrefix: '372' },
-  { city: 'Boston', region: 'MA', postalPrefix: '021' },
-  { city: 'Las Vegas', region: 'NV', postalPrefix: '891' },
-  { city: 'Portland', region: 'OR', postalPrefix: '972' },
-  { city: 'Memphis', region: 'TN', postalPrefix: '381' },
-  { city: 'Louisville', region: 'KY', postalPrefix: '402' },
-  { city: 'Atlanta', region: 'GA', postalPrefix: '303' },
-  { city: 'Miami', region: 'FL', postalPrefix: '331' },
-  { city: 'Minneapolis', region: 'MN', postalPrefix: '554' },
-  { city: 'Cleveland', region: 'OH', postalPrefix: '441' },
-  { city: 'Tampa', region: 'FL', postalPrefix: '336' },
-  { city: 'Sacramento', region: 'CA', postalPrefix: '958' },
-  { city: 'Kansas City', region: 'MO', postalPrefix: '641' },
-];
+  'Filled in locally for free from the bundled city list. The city, state and ZIP are real; the street line is a placeholder — replace it with the actual street address.';
 
 const streetNames = [
   'Main', 'Oak', 'Maple', 'Cedar', 'Pine', 'Elm', 'Washington', 'Lincoln',
@@ -61,24 +27,21 @@ const firstNames = [
   'Sam', 'Chris', 'Pat', 'Dana', 'Lee', 'Kim', 'Jo', 'Nico', 'Avery', 'Quinn',
 ];
 const lastNames = [
-  'Sample', 'Example', 'Tester', 'Demo', 'Rivera', 'Chen', 'Novak', 'Garcia',
+  'Sample', 'Example', 'Tester', 'Rivera', 'Chen', 'Novak', 'Garcia',
   'Haddad', 'Osei', 'Murphy', 'Larsen', 'Petrov', 'Nguyen', 'Fischer', 'Ali',
 ];
 const labelWords = ['Home', 'Office', 'Warehouse', 'Depot', 'Store', 'Studio', 'Lab', 'HQ'];
 
-function pick<T>(items: readonly T[]) {
+function pick<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
+
 function numberBetween(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function samplePlace(): SamplePlace {
-  return pick(places);
-}
-
-function postalCodeFor(place: SamplePlace) {
-  return `${place.postalPrefix}${String(numberBetween(1, 98)).padStart(2, '0')}`;
+function randomPlace(): UsPlace {
+  return pick(US_PLACES);
 }
 
 function streetFor() {
@@ -88,47 +51,99 @@ function streetFor() {
     : base;
 }
 
-/** Generate one sample address in the workspace address-book format. */
+/** Generate one address-book entry: real city / state / ZIP, placeholder street. */
 export function generateSampleAddress(): AddressInput {
-  const place = samplePlace();
+  const place = randomPlace();
   return {
     label: `${pick(labelWords)} — ${place.city}`,
     name: `${pick(firstNames)} ${pick(lastNames)}`,
     street: streetFor(),
     city: place.city,
     region: place.region,
-    postalCode: postalCodeFor(place),
-    country: 'United States',
+    postalCode: place.postalCode,
+    country: place.country,
     isDefault: false,
   };
 }
 
 export interface GeneratedRoute {
   recipientName: string;
-  origin: { city: string; region: string; postalCode: string };
-  destination: { city: string; region: string; postalCode: string };
+  origin: { city: string; region: string; postalCode: string; country: string };
+  destination: { city: string; region: string; postalCode: string; country: string };
   originStreet: string;
   destinationStreet: string;
+  /** Approximate road miles between the two ZIP areas, for a distance readout. */
+  distanceMiles: number;
 }
 
-/** Generate a sample origin → destination pair in two different cities. */
+/**
+ * Auto-fill a shipping route: two different real places from the bundled list,
+ * plus placeholder street lines. Runs entirely in the browser — free.
+ */
 export function generateRouteAddresses(): GeneratedRoute {
-  const originPlace = samplePlace();
-  let destinationPlace = samplePlace();
-  while (destinationPlace.city === originPlace.city) destinationPlace = samplePlace();
+  const origin = randomPlace();
+  let destination = randomPlace();
+  // Avoid a same-city route, and give the pair a little separation so the
+  // route reads like a real shipment rather than a local drop.
+  let attempts = 0;
+  while (
+    attempts < 24 &&
+    (destination.postalCode === origin.postalCode ||
+      destination.region === origin.region ||
+      !statesFarEnough(origin.region, destination.region))
+  ) {
+    destination = randomPlace();
+    attempts += 1;
+  }
   return {
     recipientName: `${pick(firstNames)} ${pick(lastNames)}`,
     origin: {
-      city: originPlace.city,
-      region: originPlace.region,
-      postalCode: postalCodeFor(originPlace),
+      city: origin.city,
+      region: origin.region,
+      postalCode: origin.postalCode,
+      country: origin.country,
     },
     destination: {
-      city: destinationPlace.city,
-      region: destinationPlace.region,
-      postalCode: postalCodeFor(destinationPlace),
+      city: destination.city,
+      region: destination.region,
+      postalCode: destination.postalCode,
+      country: destination.country,
     },
     originStreet: streetFor(),
     destinationStreet: streetFor(),
+    distanceMiles: estimateDistanceMiles(origin, destination),
   };
+}
+
+/** Coarse region groupings used only to keep auto routes cross-country. */
+const REGION_GROUPS: Record<string, string> = {
+  CT: 'northeast', ME: 'northeast', MA: 'northeast', NH: 'northeast', RI: 'northeast', VT: 'northeast',
+  NJ: 'northeast', NY: 'northeast', PA: 'northeast',
+  DE: 'mid-atlantic', MD: 'mid-atlantic', DC: 'mid-atlantic', VA: 'mid-atlantic', WV: 'mid-atlantic',
+  NC: 'southeast', SC: 'southeast', GA: 'southeast', FL: 'southeast', AL: 'southeast',
+  MS: 'southeast', TN: 'southeast', KY: 'southeast', LA: 'southeast', AR: 'southeast',
+  IL: 'midwest', IN: 'midwest', MI: 'midwest', OH: 'midwest', WI: 'midwest',
+  IA: 'midwest', KS: 'midwest', MN: 'midwest', MO: 'midwest', NE: 'midwest', ND: 'midwest', SD: 'midwest',
+  AZ: 'southwest', NM: 'southwest', OK: 'southwest', TX: 'southwest',
+  CO: 'mountain', ID: 'mountain', MT: 'mountain', UT: 'mountain', WY: 'mountain', NV: 'mountain',
+  AK: 'west', CA: 'west', HI: 'west', OR: 'west', WA: 'west',
+};
+
+function statesFarEnough(a: string, b: string) {
+  const groupA = REGION_GROUPS[a] ?? a;
+  const groupB = REGION_GROUPS[b] ?? b;
+  return groupA !== groupB;
+}
+
+/**
+ * Very rough mileage from the two ZIPs' numeric prefixes. This is a planning
+ * figure for the route card only — it is not a carrier quote or a real
+ * road distance, and it is never shown as a price.
+ */
+function estimateDistanceMiles(origin: UsPlace, destination: UsPlace) {
+  const zipA = Number(origin.postalCode.slice(0, 3));
+  const zipB = Number(destination.postalCode.slice(0, 3));
+  if (Number.isNaN(zipA) || Number.isNaN(zipB)) return 0;
+  const spread = Math.abs(zipA - zipB);
+  return Math.min(3200, Math.round(spread * 3.4 + 180));
 }

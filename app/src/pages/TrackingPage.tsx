@@ -2,25 +2,20 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode, type RefOb
 import { Link, useSearchParams } from 'react-router-dom';
 import { useReducedMotion } from 'framer-motion';
 import {
-  Camera,
   Check,
   ChevronDown,
   ChevronUp,
-  Cloud,
   Copy,
   Download,
   ExternalLink,
   Info,
-  LockKeyhole,
   Mail,
-  Maximize2,
   MoreVertical,
   PackageSearch,
   Pause,
   Pencil,
   Printer,
   Search,
-  ShieldCheck,
   Star,
   TriangleAlert,
   X,
@@ -43,13 +38,6 @@ import PublicTrackingDetails from '@/components/tracking/PublicTrackingDetails';
 import { useTrackingAttachment } from '@/hooks/use-tracking-attachment';
 import { useWorkspace } from '@/context/workspace';
 import { attachmentCategory, officialTrackingURL } from '@/lib/tracking';
-import {
-  carrierTrackingCandidate,
-  getCarrierStatus,
-  lookupCarrierShipment,
-  unavailableCarrierStatus,
-  type CarrierTrackingResult,
-} from '@/lib/carrier';
 import {
   displayShipmentEvents,
   holdReasonLabel,
@@ -123,13 +111,6 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
     loading: boolean;
     error: string;
   }>({ reference: '', shipment: null, loading: false, error: '' });
-  const [carrierStatus, setCarrierStatus] = useState(unavailableCarrierStatus);
-  const [carrierLookup, setCarrierLookup] = useState<{
-    reference: string;
-    result: CarrierTrackingResult | null;
-    loading: boolean;
-    error: string;
-  }>({ reference: '', result: null, loading: false, error: '' });
   const lookupRef = useRef(lookupPublicShipment);
   const activeReference = useRef(queryNumber.trim());
   const inputRef = useRef<HTMLInputElement>(null);
@@ -186,40 +167,6 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
       active = false;
     };
   }, [submitted, mode]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void getCarrierStatus(controller.signal)
-      .then((status) => {
-        if (!controller.signal.aborted) setCarrierStatus(status);
-      })
-      .catch(() => {
-        /* The unavailable status keeps the application record fully usable. */
-      });
-    return () => controller.abort();
-  }, []);
-  useEffect(() => {
-    if (!submitted || !carrierStatus.trackingEnabled || !carrierTrackingCandidate(submitted))
-      return;
-    const controller = new AbortController();
-    void lookupCarrierShipment(submitted, controller.signal)
-      .then((result) => {
-        if (!controller.signal.aborted)
-          setCarrierLookup({ reference: submitted, result, loading: false, error: '' });
-      })
-      .catch((cause) => {
-        if (controller.signal.aborted || (cause instanceof DOMException && cause.name === 'AbortError'))
-          return;
-        setCarrierLookup({
-          reference: submitted,
-          result: null,
-          loading: false,
-          error:
-            cause instanceof Error ? cause.message : 'Official FedEx lookup is unavailable.',
-        });
-      });
-    return () => controller.abort();
-  }, [submitted, carrierStatus.trackingEnabled]);
 
   function track(number: string) {
     const reference = number.trim();
@@ -324,6 +271,27 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
   const onRoutePhoto = stagePhotoFor('in_transit');
   const summaryStagePhoto = delivered ? deliveryPhoto : onRoutePhoto;
   const summaryStageLabel = delivered ? 'Delivery' : 'On-route';
+
+  // Public tracking shows an image only when an administrator added one. When
+  // present it renders full size inline rather than as a small file chip, and
+  // selecting it opens the enlarged view.
+  const trackingPhoto = summaryStagePhoto
+    ? {
+        src: summaryStagePhoto,
+        alt: `${summaryStageLabel.toLowerCase()} photo for this shipment`,
+        caption: `${summaryStageLabel} photo added by the shipment administrator.`,
+        enlargeLabel: `Open the ${summaryStageLabel.toLowerCase()} photo full size`,
+        onClick: () => setStagePhotoView({ src: summaryStagePhoto, label: summaryStageLabel }),
+      }
+    : attachment.image
+      ? {
+          src: attachment.image,
+          alt: 'Shipment image added by the administrator',
+          caption: 'Image added by the shipment administrator.',
+          enlargeLabel: 'Open the shipment image full size',
+          onClick: () => setImageOpen(true),
+        }
+      : null;
   const currentJourneyId = delivered
     ? [...journeyEvents].reverse().find((event) => event.status === 'delivered')?.id
     : latestEvent?.id;
@@ -350,170 +318,6 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
         year: 'numeric',
       }).format(new Date(`${shipment.estimatedDelivery}T12:00:00`))
     : 'Not provided';
-  const carrierCandidate = carrierTrackingCandidate(submitted);
-  const activeCarrierLookup =
-    carrierLookup.reference === submitted
-      ? carrierLookup
-      : {
-          result: null,
-          loading: Boolean(submitted && carrierStatus.trackingEnabled && carrierCandidate),
-          error: '',
-        };
-  const carrierResult = activeCarrierLookup.result;
-  const formatCarrierDate = (value: string) => {
-    if (!value) return 'Not provided';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      ...(value.includes('T') ? { hour: 'numeric', minute: '2-digit' } : {}),
-    }).format(date);
-  };
-  const carrierPanel = submitted ? (
-    <section className="fx-carrier-panel" aria-labelledby="carrier-panel-heading">
-      <div className="fx-carrier-panel-heading">
-        <div>
-          <p className="fx-eyebrow">Side-by-side sources</p>
-          <h2 id="carrier-panel-heading">Application record and official FedEx</h2>
-          <p>
-            The two sources stay separate. Creating or changing the application record never
-            changes a FedEx shipment.
-          </p>
-        </div>
-        <span className={`fx-carrier-env ${carrierStatus.configured ? 'is-connected' : ''}`}>
-          {carrierStatus.configured
-            ? carrierStatus.environment === 'production'
-              ? 'Production API'
-              : 'Sandbox API'
-            : 'API not connected'}
-        </span>
-      </div>
-      <div className="fx-carrier-grid">
-        <article className="fx-carrier-card">
-          <div className="fx-carrier-card-title">
-            <ShieldCheck size={21} aria-hidden="true" />
-            <h3>Application record</h3>
-          </div>
-          <p className="fx-carrier-status">
-            <strong>Application status:</strong>{' '}
-            {shipment ? statusLabel : lookupLoading ? 'Checking…' : 'No matching record'}
-          </p>
-          <p>
-            {shipment
-              ? 'Entered by this site’s administrator in the public-shipment registry.'
-              : 'This number is not in the application’s public-shipment registry.'}
-          </p>
-          {shipment && (
-            <p>
-              Current location: {shipment.currentLocation}. Estimated delivery: {estimatedDate}.
-            </p>
-          )}
-        </article>
-        <article className="fx-carrier-card fx-carrier-card-official">
-          <div className="fx-carrier-card-title">
-            <Cloud size={21} aria-hidden="true" />
-            <h3>Official FedEx API</h3>
-          </div>
-          {!carrierStatus.trackingEnabled ? (
-            <>
-              <p className="fx-carrier-status">
-                <strong>Connection:</strong> Not configured on this server
-              </p>
-              <p>
-                Add the private FedEx Developer Portal credentials on the server to enable live
-                API lookup here. Until then, use the official FedEx tracking site.
-              </p>
-              {carrierStatus.missing.length > 0 && (
-                <p className="fx-carrier-missing">
-                  Missing server settings: {carrierStatus.missing.join(', ')}
-                </p>
-              )}
-            </>
-          ) : !carrierCandidate ? (
-            <>
-              <p className="fx-carrier-status">
-                <strong>Lookup:</strong> Skipped for this application reference
-              </p>
-              <p>
-                Official API lookup runs for numeric FedEx-style tracking numbers. This reference
-                can still be an application-only record.
-              </p>
-            </>
-          ) : activeCarrierLookup.loading ? (
-            <p className="fx-carrier-status">Checking FedEx…</p>
-          ) : activeCarrierLookup.error ? (
-            <>
-              <p className="fx-carrier-status">
-                <strong>Lookup:</strong> Unavailable
-              </p>
-              <p>{activeCarrierLookup.error}</p>
-            </>
-          ) : carrierResult?.found ? (
-            <>
-              <p className="fx-carrier-status">
-                <strong>FedEx status:</strong> {carrierResult.status || 'Status provided'}
-              </p>
-              <dl className="fx-carrier-facts">
-                <div>
-                  <dt>Service</dt>
-                  <dd>{carrierResult.service || 'Not provided'}</dd>
-                </div>
-                <div>
-                  <dt>Latest location</dt>
-                  <dd>{carrierResult.latestLocation || 'Not provided'}</dd>
-                </div>
-                <div>
-                  <dt>Estimated delivery</dt>
-                  <dd>{formatCarrierDate(carrierResult.estimatedDelivery)}</dd>
-                </div>
-                {carrierResult.actualDelivery && (
-                  <div>
-                    <dt>Delivered</dt>
-                    <dd>{formatCarrierDate(carrierResult.actualDelivery)}</dd>
-                  </div>
-                )}
-              </dl>
-              {carrierResult.events.length > 0 && (
-                <ol className="fx-carrier-events">
-                  {carrierResult.events.slice(0, 5).map((event, index) => (
-                    <li key={`${event.at}-${index}`}>
-                      <strong>{event.description || 'Tracking update'}</strong>
-                      <span>
-                        {event.location}
-                        {event.location && event.at ? ' · ' : ''}
-                        {event.at ? formatCarrierDate(event.at) : ''}
-                      </span>
-                      {event.detail && <span>{event.detail}</span>}
-                    </li>
-                  ))}
-                </ol>
-              )}
-              <p className="fx-carrier-source-note">
-                Returned by FedEx through this server in the{' '}
-                {carrierStatus.environment === 'production' ? 'production' : 'sandbox test'}{' '}
-                environment
-                {carrierStatus.environment === 'production'
-                  ? '.'
-                  : '; sandbox results are test data, not a live delivery record.'}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="fx-carrier-status">
-                <strong>FedEx status:</strong> No matching FedEx record
-              </p>
-              <p>{carrierResult?.message || 'FedEx has no tracking record for this number.'}</p>
-            </>
-          )}
-          <CarrierLink href={officialTrackingURL(submitted)}>
-            Open this number on FedEx <ExternalLink size={14} aria-hidden="true" />
-          </CarrierLink>
-        </article>
-      </div>
-    </section>
-  ) : null;
   const form = (
     <form
       className={`fx-tracking-form ${submitted ? 'fx-tracking-form-compact' : ''}`}
@@ -794,86 +598,6 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                   <Mail size={17} aria-hidden="true" />
                   Get Status Updates
                 </CarrierLink>
-                <div
-                  className={`fx-delivery-photo ${summaryStagePhoto || attachment.image ? 'has-photo' : ''}`}
-                  aria-busy={attachment.loading}
-                >
-                  {summaryStagePhoto ? (
-                    <button
-                      className="fx-open-photo"
-                      type="button"
-                      onClick={() =>
-                        setStagePhotoView({ src: summaryStagePhoto, label: summaryStageLabel })
-                      }
-                      aria-label={`Enlarge public ${summaryStageLabel.toLowerCase()} photo`}
-                    >
-                      <img
-                        src={summaryStagePhoto}
-                        alt={`Public ${summaryStageLabel.toLowerCase()} photo for this shipment`}
-                      />
-                      <span>
-                        <Maximize2 size={17} aria-hidden="true" />
-                        View photo
-                      </span>
-                    </button>
-                  ) : attachment.image ? (
-                    <button
-                      className="fx-open-photo"
-                      type="button"
-                      onClick={() => setImageOpen(true)}
-                      aria-label="Enlarge private application attachment"
-                    >
-                      <img src={attachment.image} alt="Application image attachment" />
-                      <span>
-                        <Maximize2 size={17} aria-hidden="true" />
-                        View image
-                      </span>
-                    </button>
-                  ) : (
-                    <div className="fx-photo-placeholder">
-                      <Camera size={45} strokeWidth={1.25} aria-hidden="true" />
-                      <h3>Private application attachment</h3>
-                      <p>
-                        {attachment.loading
-                          ? 'Checking attachment access…'
-                          : 'A delivery photo is not supplied by this preview.'}
-                      </p>
-                      <LockKeyhole size={16} aria-hidden="true" />
-                    </div>
-                  )}
-                </div>
-                {summaryStagePhoto ? (
-                  <p className="fx-image-caption">
-                    Public {summaryStageLabel.toLowerCase()} photo added by the shipment
-                    administrator to this application record—not carrier-provided delivery proof.
-                  </p>
-                ) : (
-                  attachment.image && (
-                    <p className="fx-image-caption">
-                      Uploaded by this application’s administrator—not carrier-provided delivery
-                      proof.
-                    </p>
-                  )
-                )}
-                {attachment.message && (
-                  <div className="fx-attachment-message" role="status">
-                    <LockKeyhole size={16} aria-hidden="true" />
-                    <p>
-                      {attachment.message}
-                      {mode === 'server' && !user && (
-                        <Link to="/login">Sign in to this application</Link>
-                      )}
-                    </p>
-                  </div>
-                )}
-                {user?.role === 'admin' && (
-                  <Link
-                    className="fx-text-button fx-manage-attachment"
-                    to={`/admin/settings?tab=attachments&number=${encodeURIComponent(submitted)}&event=${encodeURIComponent(category)}`}
-                  >
-                    Manage image attachments
-                  </Link>
-                )}
                 <CarrierLink
                   href="https://www.fedex.com/en-us/customer-support/claims.html"
                   className="fx-report-link"
@@ -881,6 +605,24 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                   <PackageSearch size={17} aria-hidden="true" />
                   Report missing package
                 </CarrierLink>
+                {trackingPhoto && (
+                  <figure className="fx-delivery-photo has-photo fx-photo-full">
+                    <button
+                      type="button"
+                      className="fx-photo-full-open"
+                      onClick={trackingPhoto.onClick}
+                      aria-label={trackingPhoto.enlargeLabel}
+                    >
+                      <img src={trackingPhoto.src} alt={trackingPhoto.alt} />
+                    </button>
+                    <figcaption>
+                      <span>{trackingPhoto.caption}</span>
+                      <span className="fx-photo-full-hint">
+                        Select the image to open it full size.
+                      </span>
+                    </figcaption>
+                  </figure>
+                )}
               </div>
               <div className="fx-tracking-journey">
                 <div className="fx-reference-heading">
@@ -1011,7 +753,6 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                 )}
               </div>
             </section>
-            {carrierPanel}
             {shipment && (
               <>
                 <div className="fx-full-details-action">
@@ -1046,10 +787,8 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
             )}
             <p className="fx-result-limit">
               {shipment
-                ? 'Application shipment record only. Delivery actions and notifications are handled on the official FedEx website; nothing is submitted to the carrier here.'
-                : carrierResult?.found
-                  ? 'No application record matches this number. The Official FedEx API result above is a read-only carrier lookup; delivery actions remain on FedEx.'
-                  : 'Only administrator-created public shipments can be tracked here. Use official FedEx tracking for a carrier shipment.'}
+                ? 'Delivery actions and notifications are handled on the official FedEx website; nothing is submitted to the carrier here.'
+                : 'Only administrator-created public shipments can be tracked here. Use official FedEx tracking for a carrier shipment.'}
             </p>
           </>
         )}
@@ -1176,12 +915,9 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
       </Dialog>
       <Dialog open={imageOpen && Boolean(attachment.image)} onOpenChange={setImageOpen}>
         <DialogContent className="fx-private-image-dialog">
-          <DialogTitle>Private application attachment</DialogTitle>
-          <DialogDescription>
-            Uploaded by the application’s administrator, not carrier-provided delivery proof. Access
-            is checked by the application server.
-          </DialogDescription>
-          {attachment.image && <img src={attachment.image} alt="Private attachment enlarged" />}
+          <DialogTitle>Shipment image</DialogTitle>
+          <DialogDescription>Added by the shipment administrator for this tracking number.</DialogDescription>
+          {attachment.image && <img src={attachment.image} alt="Shipment image enlarged" />}
           <DialogClose asChild>
             <button className="fx-outline-button" type="button">
               <X size={16} aria-hidden="true" />

@@ -8,10 +8,24 @@ import '@/workspace.css';
 const STORAGE_KEY = 'fedexr:admin-access-verified';
 const ACCESS_KEY = import.meta.env.VITE_ADMIN_ACCESS_KEY as string | undefined;
 
+/**
+ * Session marker derived from the configured key. The plaintext key is never
+ * written to sessionStorage, and rotating VITE_ADMIN_ACCESS_KEY invalidates any
+ * marker issued for the previous value.
+ */
+function sessionMarker(): string {
+  if (!ACCESS_KEY) return '';
+  let hash = 0;
+  for (let index = 0; index < ACCESS_KEY.length; index += 1) {
+    hash = (hash * 31 + ACCESS_KEY.charCodeAt(index)) | 0;
+  }
+  return `v1-${hash.toString(36)}`;
+}
+
 function isVerified(): boolean {
   if (!ACCESS_KEY) return true;
   try {
-    return sessionStorage.getItem(STORAGE_KEY) === ACCESS_KEY;
+    return sessionStorage.getItem(STORAGE_KEY) === sessionMarker();
   } catch {
     return false;
   }
@@ -19,7 +33,7 @@ function isVerified(): boolean {
 
 function storeVerified() {
   try {
-    sessionStorage.setItem(STORAGE_KEY, ACCESS_KEY);
+    sessionStorage.setItem(STORAGE_KEY, sessionMarker());
   } catch {
     /* sessionStorage unavailable; user will need to re-enter on refresh. */
   }

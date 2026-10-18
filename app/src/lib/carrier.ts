@@ -10,28 +10,6 @@ export interface CarrierStatus {
   missing: string[];
 }
 
-export interface CarrierTrackingEvent {
-  at: string;
-  description: string;
-  detail: string;
-  location: string;
-}
-
-export interface CarrierTrackingResult {
-  found: boolean;
-  trackingNumber: string;
-  status: string;
-  statusCode: string;
-  service: string;
-  latestLocation: string;
-  estimatedDelivery: string;
-  estimatedDeliveryWindowEnd?: string;
-  actualDelivery: string;
-  shipDate?: string;
-  events: CarrierTrackingEvent[];
-  message?: string;
-}
-
 export interface CarrierPartyInput {
   name: string;
   phone: string;
@@ -76,10 +54,6 @@ export const unavailableCarrierStatus: CarrierStatus = {
   missing: ['Carrier status service'],
 };
 
-export function carrierTrackingCandidate(value: string) {
-  return /^[0-9]{9,34}$/.test(value.replace(/[\s-]/g, ''));
-}
-
 export async function getCarrierStatus(signal?: AbortSignal): Promise<CarrierStatus> {
   try {
     const result = await accountRequest<{ carrier: CarrierStatus }>(
@@ -93,19 +67,6 @@ export async function getCarrierStatus(signal?: AbortSignal): Promise<CarrierSta
     if (cause instanceof DOMException && cause.name === 'AbortError') throw cause;
     return unavailableCarrierStatus;
   }
-}
-
-export async function lookupCarrierShipment(
-  trackingNumber: string,
-  signal?: AbortSignal,
-): Promise<CarrierTrackingResult> {
-  const result = await accountRequest<{ carrier: CarrierTrackingResult }>(
-    `/api/carrier/track/${encodeURIComponent(trackingNumber.replace(/[\s-]/g, ''))}`,
-    'GET',
-    undefined,
-    signal,
-  );
-  return result.carrier;
 }
 
 export async function createCarrierShipment(

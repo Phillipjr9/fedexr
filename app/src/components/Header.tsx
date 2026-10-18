@@ -1,5 +1,18 @@
 import { useState } from 'react';
-import { ChevronDown, Menu, Search, UserCircle, ArrowRight, ShieldCheck, Settings, Truck } from 'lucide-react';
+import {
+  ArrowRight,
+  ChevronDown,
+  LayoutDashboard,
+  LogOut,
+  MapPin,
+  Menu,
+  Package,
+  Search,
+  Settings,
+  ShieldCheck,
+  Truck,
+  UserCircle,
+} from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -47,8 +60,6 @@ const navigation = [
     href: '/tracking',
     links: [
       { label: 'Track a package', href: '/tracking' },
-      { label: 'Admin dashboard', href: '/admin' },
-      { label: 'Manage shipments', href: '/admin' },
     ],
   },
   {
@@ -138,24 +149,11 @@ const searchPages = [
     href: '/store',
     keywords: 'boxes envelope tape',
   },
-  {
-    label: 'Admin dashboard',
-    description: 'Manage shipments, profiles, and workspace settings',
-    href: '/admin',
-    keywords: 'admin dashboard manage shipments workspace',
-  },
-  {
-    label: 'Admin login',
-    description: 'Administrator sign-in and workspace management',
-    href: '/admin/login',
-    keywords: 'admin administrator settings owner',
-  },
 ];
 
 export default function Header() {
   const { t } = useTranslation();
-  const { user } = useWorkspace();
-  const accountPath = user?.role === 'admin' ? '/admin' : '/admin/login';
+  const { user, signOut } = useWorkspace();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -206,16 +204,20 @@ export default function Header() {
           </nav>
 
           <div className="header-actions">
-            <div className="header-account-control">
-              <Link
-                to={accountPath}
-                className="header-account"
-                aria-label={user?.role === 'admin' ? 'Open admin dashboard' : 'Admin login'}
-              >
-                <span>{user?.role === 'admin' ? 'Admin Dashboard' : 'Admin Login'}</span>
-                <ShieldCheck size={26} strokeWidth={1.25} aria-hidden="true" />
-              </Link>
-              {user?.role === 'admin' && (
+            {user ? (
+              <div className="header-account-control">
+                <Link
+                  to={user.role === 'admin' ? '/admin' : '/dashboard'}
+                  className="header-account"
+                  aria-label={user.role === 'admin' ? 'Open admin dashboard' : 'Open my account'}
+                >
+                  <span>{user.role === 'admin' ? 'Dashboard' : 'My Account'}</span>
+                  {user.role === 'admin' ? (
+                    <ShieldCheck size={26} strokeWidth={1.25} aria-hidden="true" />
+                  ) : (
+                    <UserCircle size={26} strokeWidth={1.25} aria-hidden="true" />
+                  )}
+                </Link>
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <button
@@ -232,30 +234,76 @@ export default function Header() {
                     className="header-dropdown header-account-dropdown"
                   >
                     <DropdownMenuLabel className="header-account-menu-label">
-                      Administrator
+                      {user.name || user.email}
                     </DropdownMenuLabel>
-                    <DropdownMenuItem asChild className="header-dropdown-link">
-                      <Link to="/admin">
-                        <Truck size={18} aria-hidden="true" />
-                        Shipment Dashboard
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="header-dropdown-link">
-                      <Link to="/admin/settings">
-                        <Settings size={18} aria-hidden="true" />
-                        Workspace Settings
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="header-dropdown-link">
-                      <Link to="/admin/settings?tab=security">
-                        <UserCircle size={18} aria-hidden="true" />
-                        Profile settings
-                      </Link>
+                    {user.role === 'admin' ? (
+                      <>
+                        <DropdownMenuItem asChild className="header-dropdown-link">
+                          <Link to="/admin">
+                            <Truck size={18} aria-hidden="true" />
+                            Shipment Dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild className="header-dropdown-link">
+                          <Link to="/admin/settings">
+                            <Settings size={18} aria-hidden="true" />
+                            Workspace Settings
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild className="header-dropdown-link">
+                          <Link to="/admin/settings?tab=security">
+                            <UserCircle size={18} aria-hidden="true" />
+                            Profile settings
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    ) : (
+                      <>
+                        <DropdownMenuItem asChild className="header-dropdown-link">
+                          <Link to="/dashboard">
+                            <LayoutDashboard size={18} aria-hidden="true" />
+                            My dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild className="header-dropdown-link">
+                          <Link to="/dashboard?section=plans">
+                            <Package size={18} aria-hidden="true" />
+                            Shipment plans
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild className="header-dropdown-link">
+                          <Link to="/dashboard?section=addresses">
+                            <MapPin size={18} aria-hidden="true" />
+                            Address book
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild className="header-dropdown-link">
+                          <Link to="/dashboard?section=profile">
+                            <UserCircle size={18} aria-hidden="true" />
+                            Profile &amp; access
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    <DropdownMenuItem
+                      className="header-dropdown-link"
+                      onSelect={() => {
+                        void signOut();
+                        navigate('/', { replace: true });
+                      }}
+                    >
+                      <LogOut size={18} aria-hidden="true" />
+                      Sign out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              )}
-            </div>
+              </div>
+            ) : (
+              <Link to="/login" className="header-account" aria-label="Sign in to your account">
+                <span>Sign In</span>
+                <UserCircle size={26} strokeWidth={1.25} aria-hidden="true" />
+              </Link>
+            )}
 
             <Dialog
               open={searchOpen}
@@ -362,13 +410,34 @@ export default function Header() {
                   <Link to="/rate-calculator" onClick={() => setMobileMenuOpen(false)}>
                     Get a quote
                   </Link>
-                  <Link
-                    to={user?.role === 'admin' ? '/admin' : '/admin/login'}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <ShieldCheck size={21} aria-hidden="true" />
-                    {user?.role === 'admin' ? 'Shipment Dashboard' : 'Admin login'}
-                  </Link>
+                  {user ? (
+                    <>
+                      <Link
+                        to={user.role === 'admin' ? '/admin' : '/dashboard'}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <LayoutDashboard size={21} aria-hidden="true" />
+                        {user.role === 'admin' ? 'Admin dashboard' : 'My account'}
+                      </Link>
+                      <button
+                        type="button"
+                        className="mobile-sign-out"
+                        onClick={() => {
+                          void signOut();
+                          setMobileMenuOpen(false);
+                          navigate('/', { replace: true });
+                        }}
+                      >
+                        <LogOut size={21} aria-hidden="true" />
+                        Sign out
+                      </button>
+                    </>
+                  ) : (
+                    <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                      <UserCircle size={21} aria-hidden="true" />
+                      Sign in
+                    </Link>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>

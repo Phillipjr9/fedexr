@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { RefreshCw, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import AddressAutocomplete from '@/components/AddressAutocomplete';
 import { useWorkspace } from '@/context/workspace';
 import { localDate, sampleServices } from '@/lib/shipping';
 import { generateRouteAddresses } from '@/lib/addressGenerator';
@@ -169,7 +170,7 @@ export function PublicShipmentEditor({
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [trackingGenerated, setTrackingGenerated] = useState(false);
-  const [routeGenerated, setRouteGenerated] = useState(false);
+  const [routeSummary, setRouteSummary] = useState('');
   const customers = data.users.filter(
     (profile) => profile.status === 'active' && profile.role === 'member',
   );
@@ -178,7 +179,7 @@ export function PublicShipmentEditor({
     const route = generateRouteAddresses();
     setInput((previous) => ({
       ...previous,
-      recipientLabel: `${route.recipientName} (sample)`,
+      recipientLabel: previous.recipientLabel.trim() || route.recipientName,
       originCity: route.origin.city,
       originRegion: route.origin.region,
       originPostalCode: route.origin.postalCode,
@@ -190,7 +191,11 @@ export function PublicShipmentEditor({
           ? `${route.origin.city}, ${route.origin.region}`
           : previous.currentLocation,
     }));
-    setRouteGenerated(true);
+    setRouteSummary(
+      `${route.origin.city}, ${route.origin.region} ${route.origin.postalCode} → ` +
+        `${route.destination.city}, ${route.destination.region} ${route.destination.postalCode}` +
+        ` (about ${route.distanceMiles.toLocaleString('en-US')} mi)`,
+    );
     setError('');
   }
 
@@ -239,13 +244,17 @@ export function PublicShipmentEditor({
               onClick={generateRoute}
             >
               <Sparkles size={16} aria-hidden="true" />
-              Auto-generate route addresses (free)
+              Auto-fill route (free)
             </button>
-            {routeGenerated && (
+            <p className="workspace-muted">
+              Fills origin and destination from the bundled city list in your browser. No address
+              lookup service is called, so autocomplete and auto-fill stay free with no per-use
+              charge.
+            </p>
+            {routeSummary && (
               <p className="workspace-muted" role="status">
-                Sample origin and destination generated locally. These are example places for an
-                application route record, not verified addresses — edit anything before saving,
-                then monitor the route on the public tracking page.
+                Route filled in — {routeSummary}. Adjust any field, then save and monitor the
+                shipment on the public tracking page.
               </p>
             )}
           </div>
@@ -334,23 +343,46 @@ export function PublicShipmentEditor({
               </small>
             </div>
             <div className="service-field">
-              <label htmlFor="shipment-origin-city">Origin city *</label>
-              <input
+              <AddressAutocomplete
                 id="shipment-origin-city"
+                label="Origin city *"
                 value={input.originCity}
-                onChange={(event) => set('originCity', event.target.value)}
-                maxLength={80}
                 required
+                placeholder="Start typing a city or ZIP…"
+                helpText="Free autocomplete — pick a city to fill in the state and ZIP automatically."
+                onChange={(city) => set('originCity', city)}
+                onSelect={(place) => {
+                  setInput((previous) => ({
+                    ...previous,
+                    originCity: place.city,
+                    originRegion: place.region,
+                    originPostalCode: place.postalCode,
+                    currentLocation:
+                      !previous.currentLocation.trim() ||
+                      previous.status === 'label_created'
+                        ? `${place.city}, ${place.region}`
+                        : previous.currentLocation,
+                  }));
+                }}
               />
             </div>
             <div className="service-field">
-              <label htmlFor="shipment-destination-city">Destination city *</label>
-              <input
+              <AddressAutocomplete
                 id="shipment-destination-city"
+                label="Destination city *"
                 value={input.destinationCity}
-                onChange={(event) => set('destinationCity', event.target.value)}
-                maxLength={80}
                 required
+                placeholder="Start typing a city or ZIP…"
+                helpText="Free autocomplete — pick a city to fill in the state and ZIP automatically."
+                onChange={(city) => set('destinationCity', city)}
+                onSelect={(place) =>
+                  setInput((previous) => ({
+                    ...previous,
+                    destinationCity: place.city,
+                    destinationRegion: place.region,
+                    destinationPostalCode: place.postalCode,
+                  }))
+                }
               />
             </div>
             <div className="service-field">
@@ -459,14 +491,15 @@ export function PublicShipmentEditor({
               </div>
             )}
             <div className="service-field">
-              <label htmlFor="shipment-current-location">Current location *</label>
-              <input
+              <AddressAutocomplete
                 id="shipment-current-location"
+                label="Current location *"
                 value={input.currentLocation}
-                onChange={(event) => set('currentLocation', event.target.value)}
-                maxLength={120}
-                placeholder="City, ST"
                 required
+                maxLength={120}
+                placeholder="Start typing a city or ZIP…"
+                onChange={(city) => set('currentLocation', city)}
+                onSelect={(place) => set('currentLocation', `${place.city}, ${place.region}`)}
               />
             </div>
             <div className="service-field workspace-field-wide">

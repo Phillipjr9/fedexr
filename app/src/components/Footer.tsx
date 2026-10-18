@@ -61,9 +61,6 @@ export default function Footer() {
                 <Link to="/store">Shipping supplies</Link>
               </li>
               <li>
-                <Link to="/admin">Shipment Dashboard</Link>
-              </li>
-              <li>
                 <Link to="/returns">Returns</Link>
               </li>
             </ul>
@@ -112,7 +109,6 @@ export default function Footer() {
           <p>© FedEx 1995–{new Date().getFullYear()}</p>
           <nav aria-label="Legal and privacy">
             <Link to="/support">Site information</Link>
-            <Link to="/admin/login">Admin login</Link>
             <Dialog>
               <DialogTrigger asChild>
                 <button type="button">Cookie preferences</button>

@@ -7,13 +7,10 @@ import {
   PackagePlus,
   Pencil,
   PlusCircle,
-  Sparkles,
   Trash2,
   Truck,
 } from 'lucide-react';
 import { useWorkspace } from '@/context/workspace';
-import { generateRouteAddresses } from '@/lib/addressGenerator';
-import { localDate } from '@/lib/shipping';
 import {
   holdReasonLabel,
   placeLabel,
@@ -33,7 +30,6 @@ import {
 export default function PublicShipmentsPanel() {
   const {
     data,
-    savePublicShipment,
     addPublicShipmentUpdate,
     removePublicShipment,
     setPublicShipmentVisibility,
@@ -51,7 +47,6 @@ export default function PublicShipmentsPanel() {
   const [holdReasonEdits, setHoldReasonEdits] = useState<Record<string, string>>({});
   const [photoEdits, setPhotoEdits] = useState<Record<string, string>>({});
   const [savingStatusId, setSavingStatusId] = useState('');
-  const [generatingRoute, setGeneratingRoute] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -160,48 +155,6 @@ export default function PublicShipmentsPanel() {
     }
   }
 
-  async function generateTrackableRoute() {
-    if (generatingRoute) return;
-    setGeneratingRoute(true);
-    setError('');
-    try {
-      const route = generateRouteAddresses();
-      const shipment = await savePublicShipment({
-        trackingNumber: '',
-        userId: null,
-        recipientLabel: `${route.recipientName} (sample route)`,
-        originCity: route.origin.city,
-        originRegion: route.origin.region,
-        originPostalCode: route.origin.postalCode,
-        destinationCity: route.destination.city,
-        destinationRegion: route.destination.region,
-        destinationPostalCode: route.destination.postalCode,
-        service: 'ground',
-        weight: '2',
-        shipDate: localDate(),
-        estimatedDelivery: '',
-        status: 'in_transit',
-        currentLocation: `${route.origin.city}, ${route.origin.region}`,
-        holdReason: '',
-        publicNote:
-          'Sample route generated in this workspace for route monitoring. Not a FedEx shipment.',
-        isPublic: true,
-        autoProgressEnabled: true,
-        autoProgressIntervalMinutes: 5,
-        photo: '',
-      });
-      setMessage(
-        `Trackable route created: ${shipment.trackingNumber} — ${route.origin.city}, ${route.origin.region} → ${route.destination.city}, ${route.destination.region}. Automatic progression is on (every 5 minutes); use View public tracking on its row to monitor the route, or pause progression in Shipment operations.`,
-      );
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : 'The trackable route could not be created.',
-      );
-    } finally {
-      setGeneratingRoute(false);
-    }
-  }
-
   async function toggleVisibility(shipment: PublicShipment, isPublic: boolean) {
     if (visibilityId) return;
     setVisibilityId(shipment.id);
@@ -243,15 +196,6 @@ export default function PublicShipmentsPanel() {
           >
             <PackagePlus size={17} aria-hidden="true" />
             Create shipment
-          </button>
-          <button
-            type="button"
-            className="brand-button brand-button-outline"
-            disabled={generatingRoute}
-            onClick={() => void generateTrackableRoute()}
-          >
-            <Sparkles size={17} aria-hidden="true" />
-            {generatingRoute ? 'Generating route…' : 'Generate trackable route'}
           </button>
         </div>
       </div>

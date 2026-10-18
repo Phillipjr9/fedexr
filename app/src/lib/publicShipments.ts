@@ -1,6 +1,5 @@
 import { isUSZip, sampleServices } from '@/lib/shipping';
 import {
-  DEMO_TRACKING_REFERENCE,
   publicShipmentStatuses,
   type PublicShipment,
   type PublicShipmentEvent,
@@ -412,84 +411,4 @@ function validDate(value: string) {
     Number.isFinite(date.getTime()) &&
     date.toISOString().slice(0, 10) === value
   );
-}
-
-export function samplePublicShipment(): PublicShipment {
-  const events: PublicShipmentEvent[] = [
-    {
-      id: 'sample-label',
-      status: 'label_created',
-      location: 'CHICAGO, IL',
-      note: 'Label created',
-      holdReason: '',
-      photo: '',
-      at: '2026-04-01T13:30:00Z',
-    },
-    {
-      id: 'sample-pickup',
-      status: 'picked_up',
-      location: 'CHICAGO, IL',
-      note: 'Picked up',
-      holdReason: '',
-      photo: '',
-      at: '2026-04-01T14:00:00Z',
-    },
-    {
-      id: 'sample-transit',
-      status: 'in_transit',
-      location: 'BROOKLYN, NY',
-      note: 'At local facility',
-      holdReason: '',
-      photo: '',
-      at: '2026-04-02T08:15:00Z',
-    },
-    {
-      id: 'sample-out',
-      status: 'out_for_delivery',
-      location: 'NEW YORK, NY',
-      note: 'On vehicle for delivery',
-      holdReason: '',
-      photo: '',
-      at: '2026-04-02T10:30:00Z',
-    },
-    {
-      id: 'sample-delivered',
-      status: 'delivered',
-      location: 'NEW YORK, NY',
-      note: 'Delivered',
-      holdReason: '',
-      photo: '',
-      at: '2026-04-02T12:45:00Z',
-    },
-  ];
-  return {
-    id: 'sample-public-shipment',
-    trackingNumber: DEMO_TRACKING_REFERENCE,
-    userId: null,
-    recipientLabel: 'Sample recipient',
-    originCity: 'Chicago',
-    originRegion: 'IL',
-    originPostalCode: '60601',
-    destinationCity: 'New York',
-    destinationRegion: 'NY',
-    destinationPostalCode: '10001',
-    service: 'ground',
-    weight: '4.2',
-    shipDate: '2026-04-01',
-    estimatedDelivery: '2026-04-02',
-    status: 'delivered',
-    currentLocation: 'NEW YORK, NY',
-    holdReason: '',
-    publicNote: 'This sample is built into the independent preview.',
-    internalNote: '',
-    isPublic: true,
-    archivedAt: null,
-    autoProgressEnabled: false,
-    autoProgressIntervalMinutes: 5,
-    autoProgressNextAt: '',
-    events,
-    createdBy: 'sample',
-    createdAt: '2026-04-01T13:30:00Z',
-    updatedAt: '2026-04-02T12:45:00Z',
-  };
 }

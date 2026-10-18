@@ -3,7 +3,6 @@ import { isUSZip, isSampleService, localDate, type SampleServiceId } from '@/lib
 export const WORKSPACE_KEY = 'fedexr:workspace:v1';
 export const SESSION_KEY = 'fedexr:workspace-session:v1';
 export const ACCESS_EVENT = 'fedexr:workspace-access';
-export const DEMO_TRACKING_REFERENCE = 'LOCAL-12345';
 export type WorkspaceRole = 'member' | 'admin';
 export interface WorkspaceUser {
   id: string;

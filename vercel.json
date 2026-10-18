@@ -10,6 +10,12 @@
       "destination": "/index.html"
     }
   ],
+  "outputFileTracingIncludes": {
+    "/api/**": [
+      "./server/node_modules/sharp/**",
+      "./server/node_modules/@img/**"
+    ]
+  },
   "installCommand": "npm ci && npm ci --include=dev --prefix app && npm ci --omit=dev --prefix server",
   "buildCommand": "npm run build",
   "outputDirectory": "app/dist"

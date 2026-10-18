@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
-import { MAX_IMAGE_BYTES, normalizeImage, trackingReference, imageEvent } from './image-data.js';
+import { MAX_IMAGE_BYTES } from './image-limits.js';
+import { normalizeImage, trackingReference, imageEvent } from './image-data.js';
 
 const sqlFile = new URL('../migrations/002-tracking-images.sql', import.meta.url);
 async function legacySource(client) {

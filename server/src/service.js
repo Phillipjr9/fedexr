@@ -4,8 +4,7 @@ import { safeConfiguration } from './config.js';
 import { buildReport, probeSchema } from './health.js';
 import { ensureBootstrapAdmin } from './bootstrap-admin.js';
 import { assert, HttpError } from './validation.js';
-import { createImageService } from './image-service.js';
-import { imagePaths } from './image-data.js';
+import { imagePaths } from './image-limits.js';
 import { createFedExClient } from './fedex.js';
 import {
   currentActor,
@@ -39,7 +38,10 @@ const json = (value, status = 200) =>
   });
 export function createService({ pool, config, mailer, fedexFetch }) {
   const authentication = config.ready ? createAuthentication(pool, config, mailer) : null;
-  const images = createImageService({ pool, config, authentication });
+  // The image service is the only consumer of sharp, so it is loaded on demand
+  // rather than at module scope. Keeping a native binary out of this graph is
+  // what lets every other route start even if image processing is unavailable.
+  let images = null;
   const fedex = createFedExClient({ config, fetchImpl: fedexFetch });
   const carrierLookups = new Map();
   function carrierRateAllowed(request) {
@@ -101,7 +103,13 @@ export function createService({ pool, config, mailer, fedexFetch }) {
     try {
       const url = new URL(request.url);
       const pathname = url.pathname.replace(/\/+$/, '') || '/';
-      if (imagePaths.has(pathname)) return images.handle(request);
+      if (imagePaths.has(pathname)) {
+        if (!images) {
+          const { createImageService } = await import('./image-service.js');
+          images = createImageService({ pool, config, authentication });
+        }
+        return images.handle(request);
+      }
       if (request.method === 'GET' && pathname === '/api/account/health')
         // Modules are already loaded here, so only probe the database. The
         // standalone route in api/account/health.ts does the module probing,

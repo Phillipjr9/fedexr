@@ -1,14 +1,26 @@
 import { createHash } from 'node:crypto';
 import sharp from 'sharp';
 import { assert, HttpError } from './validation.js';
+import {
+  IMAGE_EVENTS,
+  MAX_IMAGE_BYTES,
+  MAX_IMAGE_JSON_BYTES,
+  MAX_IMAGE_PIXELS,
+  imagePaths,
+} from './image-limits.js';
 
-export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
-export const MAX_IMAGE_JSON_BYTES = 4 * Math.ceil(MAX_IMAGE_BYTES / 3) + 8192;
-export const MAX_IMAGE_PIXELS = 16_000_000;
-export const IMAGE_EVENTS = ['default', 'in_transit', 'delivered', 'other'];
-export const imagePaths = new Set(['/api/upload-tracking-image', '/api/get-tracking-image']);
-sharp.cache({ memory: 16, files: 0, items: 16 });
-sharp.concurrency(1);
+// Re-exported so existing importers keep working from one place.
+export { IMAGE_EVENTS, MAX_IMAGE_BYTES, MAX_IMAGE_JSON_BYTES, MAX_IMAGE_PIXELS, imagePaths };
+
+// Tuning is applied on first use rather than at module scope, so that merely
+// importing this file does not execute native code.
+let sharpTuned = false;
+function tuneSharp() {
+  if (sharpTuned) return;
+  sharpTuned = true;
+  sharp.cache({ memory: 16, files: 0, items: 16 });
+  sharp.concurrency(1);
+}
 export const checksum = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
 export function trackingReference(value) {
@@ -90,6 +102,7 @@ async function inspect(bytes, mime) {
     'Use a single-frame JPG or PNG, not an animation.',
     422,
   );
+  tuneSharp();
   const metadata = await sharp(bytes, decoderOptions).metadata();
   assert(
     metadata.format === (mime === 'image/png' ? 'png' : 'jpeg'),
@@ -112,6 +125,7 @@ export async function normalizeImage(input, mime) {
   const bytes = Buffer.from(input);
   try {
     await inspect(bytes, mime);
+    tuneSharp();
     let pipeline = sharp(bytes, decoderOptions).rotate();
     pipeline =
       mime === 'image/png'

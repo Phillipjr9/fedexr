@@ -1,4 +1,4 @@
-import { MAX_IMAGE_JSON_BYTES } from './image-data.js';
+import { MAX_IMAGE_JSON_BYTES } from './image-limits.js';
 import { HttpError } from './validation.js';
 
 export async function nodeRequest(req, origin) {

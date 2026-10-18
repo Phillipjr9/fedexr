@@ -1064,11 +1064,6 @@
   display: grid;
   place-items: center;
 }
-.workspace-access-links {
-  display: grid;
-  gap: 18px;
-  margin-top: 25px;
-}
 .workspace-access-aside {
   min-width: 0;
   background: #f4f4f4;

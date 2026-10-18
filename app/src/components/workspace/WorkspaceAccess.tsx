@@ -10,7 +10,6 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import BrandImage from '@/components/BrandImage';
-import { ExternalLink, ServiceNotice } from '@/components/ServiceLayout';
 import { useWorkspace } from '@/context/workspace';
 import { credentialError, validEmail } from '@/lib/workspace';
 import { siteImages } from '@/lib/siteAssets';
@@ -308,17 +307,6 @@ export default function WorkspaceAccess({ admin = false }: { admin?: boolean }) 
                 Forgot your password?
               </Link>
             )}
-
-            <ServiceNotice title={server ? 'Server-backed account' : 'Browser-local access'}>
-              {server
-                ? 'Accounts use server-managed sessions and a shared database. Session credentials use an HttpOnly cookie. This does not sign in to FedEx.'
-                : 'Credentials and records are stored in this browser only. This does not sign in to FedEx or provide server-side authorization.'}
-            </ServiceNotice>
-            <div className="workspace-access-links">
-              <ExternalLink href="https://www.fedex.com/secure-login/en-us/#/login-credentials">
-                Official FedEx sign-in
-              </ExternalLink>
-            </div>
           </div>
 
           <aside

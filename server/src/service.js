@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { createAuthentication } from './auth.js';
 import { safeConfiguration } from './config.js';
+import { ensureBootstrapAdmin, readAdminAccountStatus } from './bootstrap-admin.js';
 import { assert, HttpError } from './validation.js';
 import { createImageService } from './image-service.js';
 import { imagePaths } from './image-data.js';
@@ -50,25 +51,114 @@ export function createService({ pool, config, mailer, fedexFetch }) {
     carrierLookups.set(ip, recent);
     return true;
   }
+  // Tables the account service cannot run without. Names are not sensitive and
+  // are reported by the health endpoint so a missing migration is obvious
+  // before the site is switched to server-backed accounts.
+  const REQUIRED_TABLES = [
+    ['fedexr_auth_user', 'accounts'],
+    ['fedexr_plans', 'plans'],
+    ['fedexr_settings', 'settings'],
+    ['fedexr_public_shipments', 'shipments'],
+  ];
+
+  /** Non-throwing schema probe shared by ready() and the health report. */
+  async function schemaState() {
+    const select = REQUIRED_TABLES.map(
+      ([table, alias]) => `to_regclass('${table}') AS ${alias}`,
+    ).join(', ');
+    const row = (await pool.query(`SELECT ${select}`)).rows[0] || {};
+    const missingTables = REQUIRED_TABLES.filter(([, alias]) => !row[alias]).map(
+      ([table]) => table,
+    );
+    return { installed: missingTables.length === 0, missingTables };
+  }
+
   async function ready() {
     if (!config.ready)
       throw new HttpError(
         503,
         'The account service needs database, origin, signing-secret, and email configuration.',
       );
-    const state = await pool.query(
-      "SELECT to_regclass('fedexr_auth_user') AS accounts, to_regclass('fedexr_plans') AS plans, to_regclass('fedexr_settings') AS settings, to_regclass('fedexr_public_shipments') AS shipments",
-    );
-    if (
-      !state.rows[0]?.accounts ||
-      !state.rows[0]?.plans ||
-      !state.rows[0]?.settings ||
-      !state.rows[0]?.shipments
-    )
+    const { installed } = await schemaState();
+    if (!installed)
       throw new HttpError(
         503,
         'The account database schema has not been installed. Review and apply the account migration.',
       );
+  }
+
+  // Provision the configured administrator at most once per instance. Started
+  // in the background so it never adds latency to a request, and memoized so
+  // concurrent requests cannot race two creations.
+  let bootstrapPromise = null;
+  function bootstrapAdmin() {
+    if (!pool || !config.ready)
+      return Promise.resolve({ attempted: false, ready: false, missing: config.missing });
+    bootstrapPromise ||= ensureBootstrapAdmin({ pool, config, authentication }).catch(() => {
+      // Operational signal only: never log credentials or account details.
+      console.error('admin_bootstrap_failed');
+      bootstrapPromise = null;
+      return { attempted: true, ready: false, reason: 'The administrator bootstrap failed.' };
+    });
+    return bootstrapPromise;
+  }
+
+  /**
+   * Read-only readiness report for GET /api/account/health.
+   *
+   * Reports booleans and setting/table names only — never secret values, and
+   * never whether the configured administrator password is valid, so the
+   * endpoint is safe to leave unauthenticated.
+   */
+  async function healthReport() {
+    const report = {
+      ...safeConfiguration(config),
+      ready: false,
+      database: {
+        configured: Boolean(config.databaseConfigured),
+        reachable: false,
+        schemaInstalled: false,
+        missingTables: [],
+      },
+      mail: { configured: Boolean(config.smtpURL && config.mailFrom) },
+      adminBootstrap: {
+        configured: Boolean(config.adminBootstrapConfigured),
+        missing: Array.isArray(config.adminBootstrapMissing) ? config.adminBootstrapMissing : [],
+        accountExists: false,
+        isAdmin: false,
+        emailVerified: false,
+      },
+    };
+    if (!pool) return report;
+    try {
+      const schema = await schemaState();
+      report.database.reachable = true;
+      report.database.schemaInstalled = schema.installed;
+      report.database.missingTables = schema.missingTables;
+    } catch {
+      return report;
+    }
+    if (!report.database.schemaInstalled) return report;
+    try {
+      const admin = await readAdminAccountStatus(pool, config);
+      // Deliberately omit credential state (passwordMatches / hasCredential).
+      report.adminBootstrap = {
+        ...report.adminBootstrap,
+        accountExists: Boolean(admin.accountExists),
+        isAdmin: Boolean(admin.isAdmin),
+        emailVerified: Boolean(admin.emailVerified),
+        ...(admin.configured ? {} : { missing: admin.missing }),
+      };
+    } catch {
+      report.adminBootstrap = {
+        ...report.adminBootstrap,
+        error: 'The administrator account state could not be read.',
+      };
+    }
+    report.ready = Boolean(
+      config.ready && report.database.reachable && report.database.schemaInstalled,
+    );
+    return report;
   }
   async function handle(request) {
     const requestId = randomUUID();
@@ -76,6 +166,8 @@ export function createService({ pool, config, mailer, fedexFetch }) {
       const url = new URL(request.url);
       const pathname = url.pathname.replace(/\/+$/, '') || '/';
       if (imagePaths.has(pathname)) return images.handle(request);
+      if (request.method === 'GET' && pathname === '/api/account/health')
+        return json(await healthReport(), 200);
       if (request.method === 'GET' && ['/', '/api/account/status'].includes(pathname)) {
         if (!config.ready) return json({ ...safeConfiguration(config), databaseReady: false });
         try {
@@ -249,5 +341,5 @@ export function createService({ pool, config, mailer, fedexFetch }) {
       return json({ error: message, requestId }, status);
     }
   }
-  return { handle, authentication };
+  return { handle, authentication, bootstrapAdmin };
 }

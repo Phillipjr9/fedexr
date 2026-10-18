@@ -19,6 +19,9 @@ export function getRuntime() {
   if (pool) pool.on('error', () => console.error('account_database_pool_error'));
   const mailer = smtpMailer(config);
   const service = createService({ config, pool, mailer });
+  // Provision the configured administrator in the background on cold start so
+  // ADMIN_EMAIL/ADMIN_PASSWORD work without shell access to the database.
+  void service.bootstrapAdmin();
   runtime = {
     config,
     pool,

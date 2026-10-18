@@ -3,7 +3,9 @@ const loopback = new Set(['localhost', '127.0.0.1', '[::1]']);
 export function configuration(env = process.env) {
   const missing = [];
   const databaseURL = env.NEON_DATABASE_URL || env.DATABASE_URL || '';
-  const secret = env.AUTH_SECRET || '';
+  // JWT_SECRET is accepted as the signing secret so an existing hosting secret
+  // keeps working; AUTH_SECRET still wins when both are present.
+  const secret = env.AUTH_SECRET || env.JWT_SECRET || '';
   const imageAdminSecret = env.ADMIN_SECRET || '';
   const allowLegacyImageKey = env.ALLOW_LEGACY_IMAGE_KEY === 'true';
   const imageKeyValid =
@@ -50,25 +52,37 @@ export function configuration(env = process.env) {
     fedexConfigured && fedexAccountConfigured && env.FEDEX_CREATE_SHIPMENTS_ENABLED === 'true';
   let databaseConfigured = false;
   let origin = '';
-  try {
-    const url = new URL(env.APP_ORIGIN || '');
-    if (
-      url.username ||
-      url.password ||
-      url.search ||
-      url.hash ||
-      (url.pathname !== '/' && url.pathname !== '')
-    )
-      throw new Error();
-    if (
-      url.protocol !== 'https:' &&
-      !(env.NODE_ENV !== 'production' && url.protocol === 'http:' && loopback.has(url.hostname))
-    )
-      throw new Error();
-    origin = url.origin;
-  } catch {
-    missing.push('APP_ORIGIN (HTTPS; loopback HTTP is development-only)');
+  // APP_ORIGIN wins. On Vercel the platform-provided production URL is accepted
+  // as a fallback so the origin cannot drift from the actual deployment host.
+  const originCandidates = [
+    env.APP_ORIGIN || '',
+    env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}` : '',
+    env.VERCEL_URL ? `https://${env.VERCEL_URL}` : '',
+  ];
+  for (const candidate of originCandidates) {
+    if (!candidate) continue;
+    try {
+      const url = new URL(candidate);
+      if (
+        url.username ||
+        url.password ||
+        url.search ||
+        url.hash ||
+        (url.pathname !== '/' && url.pathname !== '')
+      )
+        continue;
+      if (
+        url.protocol !== 'https:' &&
+        !(env.NODE_ENV !== 'production' && url.protocol === 'http:' && loopback.has(url.hostname))
+      )
+        continue;
+      origin = url.origin;
+      break;
+    } catch {
+      /* try the next candidate */
+    }
   }
+  if (!origin) missing.push('APP_ORIGIN (HTTPS; loopback HTTP is development-only)');
   try {
     const url = new URL(databaseURL);
     if (
@@ -81,9 +95,27 @@ export function configuration(env = process.env) {
     missing.push('DATABASE_URL or NEON_DATABASE_URL');
   }
   if (secret.length < 32 || /replace|example|changeme/i.test(secret))
-    missing.push('AUTH_SECRET (at least 32 random characters)');
-  if (!env.SMTP_URL || !/^smtps?:\/\//i.test(env.SMTP_URL)) missing.push('SMTP_URL');
-  if (!env.MAIL_FROM || /[\r\n]/.test(env.MAIL_FROM)) missing.push('MAIL_FROM');
+    missing.push('AUTH_SECRET or JWT_SECRET (at least 32 random characters)');
+  // Resend publishes an SMTP endpoint, so an existing RESEND_API_KEY is enough
+  // to deliver verification and reset mail without a hand-written SMTP_URL.
+  const resendKey = String(env.RESEND_API_KEY || '').trim();
+  const smtpURL =
+    env.SMTP_URL || (resendKey ? `smtps://resend:${encodeURIComponent(resendKey)}@smtp.resend.com` : '');
+  const mailFrom = env.MAIL_FROM || env.RESEND_FROM_EMAIL || '';
+  if (!smtpURL || !/^smtps?:\/\//i.test(smtpURL)) missing.push('SMTP_URL (or RESEND_API_KEY)');
+  if (!mailFrom || /[\r\n]/.test(mailFrom)) missing.push('MAIL_FROM (or RESEND_FROM_EMAIL)');
+  // Optional bootstrap administrator: the account named by ADMIN_EMAIL is kept
+  // verified and in the admin role, signing in with ADMIN_PASSWORD.
+  const adminEmail = String(env.ADMIN_EMAIL || '').trim().toLowerCase();
+  const adminPassword = String(env.ADMIN_PASSWORD || '');
+  const adminBootstrapMissing = [];
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail) || adminEmail.length > 160)
+    adminBootstrapMissing.push('ADMIN_EMAIL (valid address)');
+  // better-auth enforces a 10–128 character password, so a shorter configured
+  // value can never be used to sign in and is reported instead of silently failing.
+  if (adminPassword.length < 10 || adminPassword.length > 128)
+    adminBootstrapMissing.push('ADMIN_PASSWORD (10–128 characters)');
+  const adminBootstrapConfigured = adminBootstrapMissing.length === 0;
   return {
     databaseURL,
     databaseConfigured,
@@ -92,8 +124,12 @@ export function configuration(env = process.env) {
     imageKeyValid,
     secret,
     origin,
-    smtpURL: env.SMTP_URL || '',
-    mailFrom: env.MAIL_FROM || '',
+    smtpURL,
+    mailFrom,
+    adminEmail,
+    adminPassword,
+    adminBootstrapConfigured,
+    adminBootstrapMissing,
     port: Number(env.ACCOUNTS_PORT || 3001),
     production: env.NODE_ENV === 'production',
     missing,

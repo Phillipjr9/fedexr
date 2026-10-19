@@ -217,9 +217,8 @@ export default function CarrierShipmentPanel({
       <div className="workspace-carrier-create">
         <h3>FedEx shipment creation</h3>
         <p className="workspace-muted">
-          FedEx shipment creation is enabled on the server, but it requires this dashboard to be
-          opened in server mode with a verified session. Browser-local access cannot submit a FedEx
-          shipment.
+          FedEx shipment creation is enabled on the server and needs this dashboard in server mode
+          with a verified session.
         </p>
       </div>
     );

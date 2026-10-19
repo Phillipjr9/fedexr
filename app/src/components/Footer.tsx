@@ -151,7 +151,7 @@ export default function Footer() {
         </div>
       </div>
       <p className="site-container project-disclaimer">
-        Independent project, not affiliated with FedEx.
+        Not affiliated with FedEx.
       </p>
     </footer>
   );

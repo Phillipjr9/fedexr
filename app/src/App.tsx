@@ -44,9 +44,9 @@ function CreateShipmentPage() {
           Create a shipment plan
         </h1>
         <div className="max-w-4xl mx-auto mb-7">
-          <ServiceNotice title="Shipment planning tool">
-            Prepare a plan or download a brief. This form does not create a label, book a shipment,
-            or collect payment information.
+          <ServiceNotice title="Planning brief">
+            Prepare a plan and download the brief. Labels, bookings, and payment are handled with
+            the carrier.
           </ServiceNotice>
         </div>
         <ShipmentWizard />

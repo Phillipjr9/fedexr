@@ -230,8 +230,7 @@ export function PublicShipmentEditor({
       <DialogContent className="workspace-dialog service-page" onCloseAutoFocus={returnFocus}>
         <DialogTitle>{record ? 'Edit public shipment' : 'Create shipment for tracking'}</DialogTitle>
         <DialogDescription>
-          This creates an application shipment record and public tracking page. It does not create
-          a FedEx label, book a carrier shipment, or charge an account.
+          This creates a shipment record and its public tracking page.
           {mode === 'browser'
             ? ' In this preview it is stored in this browser.'
             : ' It is stored in the shared account database.'}

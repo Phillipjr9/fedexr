@@ -72,7 +72,7 @@ export default function RateCalculator() {
               {field('from', 'From ZIP code', 'text', '5-digit ZIP or ZIP+4')}
               {field('to', 'To ZIP code', 'text', '5-digit ZIP or ZIP+4')}
               {field('weight', 'Package weight (lb)', 'number')}
-              {field('shipDate', 'Planned ship date', 'date', 'For planning only; this does not book a shipment.')}
+              {field('shipDate', 'Planned ship date', 'date', 'Used for the estimate and delivery window.')}
             </div>
             <fieldset className="service-dimensions">
               <legend><Ruler size={17} className="inline mr-2" aria-hidden="true" />Package dimensions (optional)</legend>

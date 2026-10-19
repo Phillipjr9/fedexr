@@ -526,14 +526,13 @@ export default function ShipmentWizard() {
                 <dt>Estimate</dt>
                 <dd>
                   ${selectedService?.price.toFixed(2)}
-                  <span>Not a current carrier quote or an amount owed.</span>
+                  <span>Estimate for planning.</span>
                 </dd>
               </div>
             </dl>
             <ServiceNotice title="What gets saved">
               Workspace records contain the recipient, ZIP codes, weight, service, date, and package
-              notes. Download the brief for full address details. Photos are never persisted.
-              Nothing is submitted to a carrier.
+              notes. Download the brief for full address details. Photos stay in this tab.
             </ServiceNotice>
             <div className="shipment-review-actions">
               <button

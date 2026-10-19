@@ -213,7 +213,7 @@ export function PlanEditor({
       <DialogContent className="workspace-dialog service-page" onCloseAutoFocus={returnFocus}>
         <DialogTitle>{record ? 'Edit shipment plan' : 'Create a shipment plan'}</DialogTitle>
         <DialogDescription>
-          A workspace plan does not book a shipment, create a label, or charge a payment.
+          Save the recipient, route, service, and package details for this plan.
         </DialogDescription>
         <form onSubmit={submit} noValidate>
           <div className="workspace-form-grid">

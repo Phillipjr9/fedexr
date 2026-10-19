@@ -296,10 +296,20 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
         }
       : null;
 
-  // Map of the delivery area, built from the same destination fields the route
-  // line above already publishes, so it needs no street address, geocoder, or
-  // coordinate table. Shown for any matched shipment, delivered or in transit.
-  const mapQuery = shipment ? deliveryMapQuery(shipment) : '';
+  // Map of the place the delivered update was recorded at, shown only once the
+  // shipment is delivered. The pin marks that recorded place — the delivery scan
+  // location, falling back to the destination the route line publishes — so it
+  // needs no geocoder and no coordinate table. Records hold no street address by
+  // design, so the pin is the scan location rather than a doorstep.
+  const deliveredLocation =
+    delivered && shipment
+      ? [...shipment.events]
+          .reverse()
+          .find((event) => event.status === 'delivered')
+          ?.location.trim() || ''
+      : '';
+  const mapQuery =
+    deliveredLocation || (delivered && shipment ? deliveryMapQuery(shipment) : '');
   const mapsKey = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '').trim();
   const mapEmbed = mapQuery ? deliveryMapEmbed(mapQuery, mapsKey) : '';
   const mapLink = mapQuery ? deliveryMapLink(mapQuery) : '';
@@ -612,16 +622,16 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                 )}
                 {mapEmbed && (
                   <section className="fx-delivery-map" aria-labelledby="delivery-map-heading">
-                    <h3 id="delivery-map-heading">Delivery area</h3>
+                    <h3 id="delivery-map-heading">Delivery location</h3>
                     <iframe
                       className="fx-delivery-map-frame"
-                      title={`Map of the delivery area for tracking number ${submitted}`}
+                      title={`Map of the delivery location for tracking number ${submitted}`}
                       src={mapEmbed}
                       loading="lazy"
                       referrerPolicy={mapReferrerPolicy}
                     />
                     <p className="fx-delivery-map-note">
-                      <span>The map shows the destination city and ZIP.</span>
+                      <span>The pin marks the place recorded with the delivered update.</span>
                       <CarrierLink href={mapLink}>Open in Google Maps</CarrierLink>
                     </p>
                   </section>

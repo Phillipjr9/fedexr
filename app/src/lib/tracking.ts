@@ -29,7 +29,7 @@ export function deliveryMapQuery(shipment: {
 }
 
 /**
- * A Google Map of that query, as an embeddable URL.
+ * A Google Map of that query, as an embeddable URL, pinned at the queried place.
  *
  * Two forms, because only one of them needs a key:
  *
@@ -42,11 +42,14 @@ export function deliveryMapQuery(shipment: {
  *   it can render an error or a consent interstitial without warning — the
  *   "Open in Google Maps" link beside the map covers exactly that case.
  */
-export function deliveryMapEmbed(query: string, apiKey?: string) {
+export function deliveryMapEmbed(query: string, apiKey?: string, zoom?: number) {
   const key = (apiKey || '').trim();
+  // Street-level when the recorded place carries a ZIP, city-level when it does
+  // not, so the pin reads as the place itself rather than a wide area.
+  const level = zoom ?? (/\d{5}/.test(query) ? 15 : 12);
   return key
     ? `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(key)}&q=${encodeURIComponent(query)}`
-    : `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=12&output=embed`;
+    : `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=${level}&output=embed`;
 }
 
 /** The documented "open in Maps" URL, for when the embed does not render. */

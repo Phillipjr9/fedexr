@@ -252,7 +252,6 @@ html {
 .footer-bottom nav a:hover,
 .footer-bottom nav button:hover { text-decoration: underline; }
 .footer-bottom :focus-visible { outline-color: white; }
-.project-disclaimer { padding-block: 16px; color: #666666; font-size: 11px; line-height: 1.5; }
 
 /* The mobile view keeps real photography visible rather than hiding it. */
 @media (min-width: 1920px) {

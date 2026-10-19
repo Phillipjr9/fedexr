@@ -76,6 +76,14 @@ Both are idempotent and serialized behind the same advisory lock, so leaving bot
 
 The original `users`, `admins`, `sessions`, `shipments`, and tracking-image tables are not replaced. Existing `fedexr_*` tables should still be reviewed for name/schema compatibility before applying. Migrations are serialized using a PostgreSQL advisory lock.
 
+### Reading the live deployment from a build
+
+`server/scripts/probe-live.js` runs after the installer and writes `[probe-live] {…}` lines to the build log: one per endpoint, with the status, content type, final URL, elapsed time, whether the body parses as JSON, and a truncated excerpt. It asks the origin the browser uses (`PROBE_ORIGIN` overrides it) for `/api/workspace`, `/api/account/health`, `/api/account/status`, `/api/carrier/status`, an unused tracking number, a deliberately unknown `/api/…` path, and `/`.
+
+It exists because the interface cannot distinguish these failures. A browser that receives a body it cannot parse as JSON can only report that the account API is unavailable — which is equally true of an HTML 500 from a function that died while initializing, a gateway timeout page, a redirect, and the SPA rewrite answering `index.html` for a path that matched no function. A build container has unrestricted egress, so it can read the actual answer and record it, and it runs before promotion, so what it records is the deployment that is live at that moment.
+
+Read-only and unauthenticated: every request is a `GET`, no credentials or cookies are attached, connection strings are redacted, bodies are truncated, the tracking lookup uses an unused number so no visitor's record is copied into a log, and the script always exits 0. Like the installer it runs only for a production hosting build, or with `PROBE_LIVE=true`; run it directly with `npm run probe:live`.
+
 ## 3. Run and enable the UI
 
 Start the account service:

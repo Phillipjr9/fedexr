@@ -10,8 +10,9 @@
     "node": "22.x"
   },
   "scripts": {
-    "build": "npm --prefix server run build && npm --prefix app run build && node server/scripts/install-schema.js",
+    "build": "npm --prefix server run build && npm --prefix app run build && node server/scripts/install-schema.js && node server/scripts/probe-live.js",
     "schema:install": "node server/scripts/install-schema.js",
+    "probe:live": "node server/scripts/probe-live.js",
     "dev:accounts": "npm --prefix server run dev",
     "test:accounts": "npm --prefix server test",
     "db:plan": "npm --prefix server run db:plan",

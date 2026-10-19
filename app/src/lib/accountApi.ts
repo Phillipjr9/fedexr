@@ -32,9 +32,19 @@ export async function accountRequest<T = Record<string, unknown>>(
   try {
     result = await response.json();
   } catch {
+    // Not JSON. Every account route answers JSON, including its own failures, so
+    // a body that cannot be parsed means something outside the service replied:
+    // an HTML 500 is a function that died while starting, an HTML 200 is a path
+    // that matched no function and was served the application shell instead, and
+    // an empty body is nothing answering at all. Those need different fixes, and
+    // the status and content type are the only facts the person reading the
+    // screen can carry back, so name them instead of guessing at a cause.
+    const kind = response.headers.get('content-type')?.split(';')[0].trim();
     throw new AccountApiError(
-      503,
-      'The account API is unavailable. Configure and start the account service; browser-local access is not used as a fallback.',
+      response.status || 503,
+      `The account service is unavailable: it answered ${response.status || 'with no status'}${
+        kind ? ` ${kind}` : ''
+      } instead of JSON.`,
     );
   }
   if (!response.ok) {

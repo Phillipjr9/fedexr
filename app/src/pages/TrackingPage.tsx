@@ -632,7 +632,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                         setNotice(
                           marked
                             ? 'Reference unmarked.'
-                            : 'Reference marked for this page visit only. No carrier account was changed.',
+                            : 'Reference marked for this page visit only.',
                         );
                       }}
                     >
@@ -754,8 +754,8 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
             )}
             <p className="fx-result-limit">
               {shipment
-                ? 'Delivery actions and notifications are handled on fedex.com; nothing is submitted to the carrier here.'
-                : 'Only shipments created on this site can be tracked here. Use FedEx tracking for a carrier shipment.'}
+                ? 'Delivery actions and notifications are handled on fedex.com.'
+                : 'No shipment matches that number on this site.'}
             </p>
           </>
         )}
@@ -863,7 +863,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
             {stagePhotoView ? `Public ${stagePhotoView.label.toLowerCase()} photo` : 'Public photo'}
           </DialogTitle>
           <DialogDescription>
-            Added to this shipment record — not carrier-provided delivery proof.
+            Added to this shipment record.
           </DialogDescription>
           {stagePhotoView && (
             <img

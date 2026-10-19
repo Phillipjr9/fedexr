@@ -192,14 +192,14 @@ export async function findPublicShipment(pool, trackingNumber) {
   return {
     ...shipment,
     userId: null,
-    createdBy: 'administrator',
+    createdBy: 'this site',
     internalNote: '',
     autoProgressEnabled: false,
     autoProgressNextAt: '',
   };
 }
 export function requireAdmin(actor) {
-  assert(isAdmin(actor), 'Administrator access is required.', 403);
+  assert(isAdmin(actor), 'Management access is required.', 403);
 }
 export async function currentActor(pool, authentication, headers) {
   const session = await authentication.api.getSession({ headers });
@@ -909,14 +909,14 @@ export async function mutateWorkspace(pool, actor, method, pathname, body) {
       );
       assert(
         result.rows[0] && !isAdmin(result.rows[0]),
-        'Administrator accounts cannot be suspended here.',
+        'Owner accounts cannot be suspended here.',
         400,
       );
       await client.query(
         'UPDATE fedexr_auth_user SET banned = $1, "banReason" = $2, "banExpires" = NULL, "updatedAt" = now() WHERE id = $3',
         [
           body.status === 'suspended',
-          body.status === 'suspended' ? 'Suspended by workspace administrator' : null,
+          body.status === 'suspended' ? 'Suspended by workspace management' : null,
           member[1],
         ],
       );

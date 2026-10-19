@@ -151,7 +151,7 @@ export async function storedImage(row) {
   const bytes = Buffer.from(row.image);
   assert(
     checksum(bytes) === row.sha256,
-    'This attachment failed its integrity check. An administrator must replace it.',
+    'This attachment failed its integrity check and cannot be displayed.',
     422,
   );
   try {
@@ -159,7 +159,7 @@ export async function storedImage(row) {
   } catch {
     throw new HttpError(
       422,
-      'The stored attachment cannot be displayed safely. An administrator must replace it.',
+      'The stored attachment cannot be displayed safely.',
     );
   }
   return bytes;

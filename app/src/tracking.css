@@ -495,6 +495,9 @@
 .fx-photo-full {
   display: block;
   width: 100%;
+  /* Small card, not a full-width banner: the photo is evidence beside the
+     status, the same scale as the thumbnails in the history table below. */
+  max-width: 260px;
   aspect-ratio: auto;
   min-height: 0;
   margin: 14px 0 0;
@@ -514,7 +517,8 @@
   display: block;
   width: 100%;
   height: auto;
-  max-height: none;
+  /* 4:3 against the 260px card. Clicking still opens the photo full size. */
+  max-height: 195px;
   object-fit: contain;
 }
 .fx-photo-full figcaption {
@@ -528,6 +532,43 @@
 .fx-photo-full-hint {
   color: var(--tracking-blue);
 }
+
+/* Delivery-area map. Sized to sit beside the photo rather than become the
+   tallest thing in the column; an explicit height is required because a
+   percentage height collapses in this auto-height parent. */
+.fx-delivery-map {
+  /* .fx-delivery-status is an unstyled block, so the map supplies its own
+     separation from the photo caption or the links above it. */
+  margin: 20px 0 0;
+}
+.fx-delivery-map h3 {
+  margin: 0 0 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #333333;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.fx-delivery-map-frame {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: 260px;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  background: #f7f7f7;
+}
+.fx-delivery-map-note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: baseline;
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #767676;
+}
+
 .fx-attachment-message {
   display: flex;
   gap: 7px;

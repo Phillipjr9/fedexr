@@ -35,7 +35,12 @@ import BrandImage from '@/components/BrandImage';
 import PublicTrackingDetails from '@/components/tracking/PublicTrackingDetails';
 import { useTrackingAttachment } from '@/hooks/use-tracking-attachment';
 import { useWorkspace } from '@/context/workspace';
-import { attachmentCategory } from '@/lib/tracking';
+import {
+  attachmentCategory,
+  deliveryMapEmbed,
+  deliveryMapLink,
+  deliveryMapQuery,
+} from '@/lib/tracking';
 import {
   displayShipmentEvents,
   holdReasonLabel,
@@ -270,9 +275,9 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
   const summaryStagePhoto = delivered ? deliveryPhoto : onRoutePhoto;
   const summaryStageLabel = delivered ? 'Delivery' : 'On-route';
 
-  // Public tracking shows an image only when one was added. When
-  // present it renders full size inline rather than as a small file chip, and
-  // selecting it opens the enlarged view.
+  // Public tracking shows an image only when one was added. When present it
+  // renders inline as a small card beside the status rather than as a
+  // full-width banner or a file chip, and selecting it opens the enlarged view.
   const trackingPhoto = summaryStagePhoto
     ? {
         src: summaryStagePhoto,
@@ -290,6 +295,21 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
           onClick: () => setImageOpen(true),
         }
       : null;
+
+  // Map of the delivery area, built from the same destination fields the route
+  // line above already publishes, so it needs no street address, geocoder, or
+  // coordinate table. Shown for any matched shipment, delivered or in transit.
+  const mapQuery = shipment ? deliveryMapQuery(shipment) : '';
+  const mapsKey = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '').trim();
+  const mapEmbed = mapQuery ? deliveryMapEmbed(mapQuery, mapsKey) : '';
+  const mapLink = mapQuery ? deliveryMapLink(mapQuery) : '';
+  // index.html sends no referrer at all, which is right for the keyless embed.
+  // Google rejects a referrer-restricted key when no referrer arrives though, so
+  // the keyed form sends the origin: the key is visible to every visitor in the
+  // iframe URL, and an origin restriction is the only thing protecting it. The
+  // tracking number itself is never in a referrer either way.
+  const mapReferrerPolicy = mapsKey ? 'strict-origin-when-cross-origin' : 'no-referrer';
+
   const currentJourneyId = delivered
     ? [...journeyEvents].reverse().find((event) => event.status === 'delivered')?.id
     : latestEvent?.id;
@@ -589,6 +609,22 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                       </span>
                     </figcaption>
                   </figure>
+                )}
+                {mapEmbed && (
+                  <section className="fx-delivery-map" aria-labelledby="delivery-map-heading">
+                    <h3 id="delivery-map-heading">Delivery area</h3>
+                    <iframe
+                      className="fx-delivery-map-frame"
+                      title={`Map of the delivery area for tracking number ${submitted}`}
+                      src={mapEmbed}
+                      loading="lazy"
+                      referrerPolicy={mapReferrerPolicy}
+                    />
+                    <p className="fx-delivery-map-note">
+                      <span>The map shows the destination city and ZIP.</span>
+                      <CarrierLink href={mapLink}>Open in Google Maps</CarrierLink>
+                    </p>
+                  </section>
                 )}
               </div>
               <div className="fx-tracking-journey">

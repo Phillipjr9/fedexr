@@ -31,9 +31,10 @@ import { pathToFileURL } from 'node:url';
  *   previously promoted deployment serving, which is a worse outcome than
  *   shipping with the runtime migration path (RUN_ACCOUNT_MIGRATIONS) still
  *   available as a retry.
- * - Idempotent. It probes first and only applies DDL when a required table is
- *   missing; every statement in the migration is CREATE ... IF NOT EXISTS and
- *   migrationPlan serializes concurrent callers behind an advisory lock.
+ * - Idempotent. Every statement in the migration is CREATE ... IF NOT EXISTS,
+ *   better-auth records which of its own migrations it has applied, and
+ *   migrationPlan serializes concurrent callers behind an advisory lock, so a
+ *   build against a database that is already current changes nothing.
  * - Quiet about secrets. Only booleans, table names, and redacted error text are
  *   printed. Connection strings, credentials, and password state never reach the
  *   build log.
@@ -158,21 +159,29 @@ async function installAdministrator(pool, config, schema) {
   };
 }
 
-/** Probe, migrate if needed, re-probe, then bootstrap. Returns the report. */
+/** Probe, migrate, re-probe, then bootstrap. Returns the report. */
 export async function installInto({ pool, config, triggeredBy }) {
   const started = Date.now();
   const { probeSchema } = await import('../src/health.js');
-  let schema = await probeSchema(pool);
-  let migration = { applied: false, skipped: 'The required tables were already present.' };
+  const before = await probeSchema(pool);
 
-  if (!schema.schemaInstalled) {
-    // Not gated by RUN_ACCOUNT_MIGRATIONS: that flag governs the request path.
-    // Here the operator asked for an install by building this deployment.
-    const { applyMigrations } = await import('../src/auto-migrate.js');
-    const applied = await applyMigrations({ pool, config });
-    migration = { ...applied, directConnection: Boolean(config.migrationUsesDirectConnection) };
-    schema = await probeSchema(pool);
-  }
+  // Always applied, not only when the probe finds a required table missing.
+  // REQUIRED_TABLES detects a database that was never installed; it cannot
+  // detect a later migration that adds a column to a table that already exists.
+  // Everything here is idempotent — CREATE ... IF NOT EXISTS plus better-auth's
+  // own record of what it has applied — so re-running costs about a second and
+  // cannot damage a database that is already current.
+  //
+  // Not gated by RUN_ACCOUNT_MIGRATIONS: that flag governs the request path.
+  // Here the operator asked for an install by building this deployment.
+  const { applyMigrations } = await import('../src/auto-migrate.js');
+  const applied = await applyMigrations({ pool, config });
+  const migration = {
+    ...applied,
+    directConnection: Boolean(config.migrationUsesDirectConnection),
+    tablesWereMissingBefore: !before.schemaInstalled,
+  };
+  const schema = await probeSchema(pool);
 
   const admin = await installAdministrator(pool, config, schema);
 

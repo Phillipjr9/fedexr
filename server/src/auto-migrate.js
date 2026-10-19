@@ -1,3 +1,4 @@
+import pg from 'pg';
 import { migrationPlan } from './migrations.js';
 import { imageMigrationSQL } from './migration-sql.js';
 
@@ -9,9 +10,21 @@ import { imageMigrationSQL } from './migration-sql.js';
  * otherwise the schema can only be created by someone with direct database
  * access.
  *
+ * The migration owns its own short-lived pool rather than borrowing the
+ * caller's, for two reasons:
+ *
+ * 1. Size. migrationPlan.apply() holds one connection for the advisory lock
+ *    while better-auth's runner acquires others from the same pool. A pool with
+ *    a single connection therefore starves itself into "timeout exceeded when
+ *    trying to connect".
+ * 2. Route. It connects directly rather than through a transaction pooler. A
+ *    session-level advisory lock taken through pgbouncer can be acquired on one
+ *    server connection and released on another, leaving it held and blocking
+ *    every later attempt. config.migrationDatabaseURL prefers an unpooled URL.
+ *
  * Safe to re-run: every statement in the SQL files is CREATE ... IF NOT EXISTS,
  * better-auth's runner tracks what it has applied, and migrationPlan serializes
- * concurrent callers behind an advisory lock — which matters when several
+ * concurrent callers behind the advisory lock — which matters when several
  * instances cold-start at once.
  *
  * The image tables are included even though the shell tooling treats them as a
@@ -52,18 +65,41 @@ export async function applyMigrations({ pool, config }) {
 let promise = null;
 
 /** Memoized so concurrent requests cannot start two migrations. */
-export function runMigrationsOnce({ pool, config }) {
+export function runMigrationsOnce({ config }) {
   if (!config.runAccountMigrations)
     return Promise.resolve({ applied: false, skipped: 'RUN_ACCOUNT_MIGRATIONS is not enabled' });
-  if (!pool)
+  const connectionString = config.migrationDatabaseURL || config.databaseURL;
+  if (!connectionString)
     return Promise.resolve({ applied: false, skipped: 'No database connection is configured' });
-  promise ||= applyMigrations({ pool, config }).then(
+
+  promise ||= (async () => {
+    const pool = new pg.Pool({
+      connectionString,
+      max: 5,
+      connectionTimeoutMillis: 20000,
+      idleTimeoutMillis: 10000,
+    });
+    pool.on('error', () => console.error('account_migration_pool_error'));
+    try {
+      const result = await applyMigrations({ pool, config });
+      return {
+        ...result,
+        directConnection: Boolean(config.migrationUsesDirectConnection),
+      };
+    } finally {
+      await pool.end().catch(() => {});
+    }
+  })().then(
     (result) => result,
     (error) => {
       // Operational signal only: no connection strings, no SQL, no credentials.
       console.error('account_migration_failed');
       promise = null;
-      return { applied: false, error: describeError(error) };
+      return {
+        applied: false,
+        error: describeError(error),
+        directConnection: Boolean(config.migrationUsesDirectConnection),
+      };
     },
   );
   return promise;

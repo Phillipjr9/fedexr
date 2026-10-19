@@ -106,21 +106,14 @@ export async function buildReport({ config, pool = null, probeModules: shouldPro
 
   // Admin account state needs only pg plus better-auth's pure-JS crypto helper,
   // imported lazily so a failure there cannot break the report.
-  const migrating = Boolean(config.runAccountMigrations);
-  // Migration work prefers a direct (unpooled) connection; see config.js.
-  const connectionString = migrating
-    ? config.migrationDatabaseURL || config.databaseURL
-    : config.databaseURL;
-  const ownPool = !pool && connectionString
+  // Read-only probing needs a single connection. The migration brings its own
+  // pool — see auto-migrate.js — because it needs several, and a direct route.
+  const ownPool = !pool && config.databaseConfigured
     ? new pg.Pool({
-        connectionString,
-        // A migration holds one connection for the advisory lock while
-        // better-auth's runner acquires others from the same pool, so max:1
-        // starves it into "timeout exceeded when trying to connect". Read-only
-        // probing needs just one.
-        max: migrating ? 5 : 1,
-        connectionTimeoutMillis: migrating ? 20000 : 8000,
-        idleTimeoutMillis: migrating ? 10000 : 1000,
+        connectionString: config.databaseURL,
+        max: 1,
+        connectionTimeoutMillis: 8000,
+        idleTimeoutMillis: 1000,
       })
     : null;
   const activePool = pool || ownPool;
@@ -134,16 +127,15 @@ export async function buildReport({ config, pool = null, probeModules: shouldPro
     // Opt-in only (RUN_ACCOUNT_MIGRATIONS). Awaited, then the schema is probed
     // again, so a single visit reports the outcome instead of needing a second
     // trip to discover whether it worked.
-    if (activePool && config.runAccountMigrations && !report.database.schemaInstalled) {
+    if (
+      config.runAccountMigrations &&
+      config.databaseConfigured &&
+      !report.database.schemaInstalled
+    ) {
       try {
         const { runMigrationsOnce } = await import('./auto-migrate.js');
-        report.migration = {
-          ...(await runMigrationsOnce({ pool: activePool, config })),
-          // Whether the migration ran on a direct connection rather than
-          // through a transaction pooler. Name only, never the URL.
-          directConnection: Boolean(config.migrationUsesDirectConnection),
-        };
-        if (report.migration.applied)
+        report.migration = await runMigrationsOnce({ config });
+        if (report.migration.applied && activePool)
           Object.assign(report.database, await probeSchema(activePool));
       } catch (error) {
         report.migration = { applied: false, error: `${errorKind(error)}: ${describeError(error)}` };

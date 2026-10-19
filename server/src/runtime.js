@@ -27,7 +27,7 @@ export function getRuntime() {
   // stack, which needs its tables to exist. Running it against an empty database
   // is what previously took the whole function down.
   if (config.runAccountMigrations && pool) {
-    void runMigrationsOnce({ pool, config })
+    void runMigrationsOnce({ config })
       .then(() => service.bootstrapAdmin())
       .catch(() => console.error('account_startup_task_failed'));
   } else {

@@ -103,7 +103,7 @@ export default function UserDashboard() {
               <div className="workspace-panel-heading">
                 <div>
                   <h2 id="assigned-shipments-heading">Shipments created for you</h2>
-                  <p>An administrator created these application shipments for your workspace.</p>
+                  <p>These shipments were created for your workspace.</p>
                 </div>
                 <Route size={27} color="#4d148c" aria-hidden="true" />
               </div>

@@ -415,11 +415,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
       <div className="fx-track-container">
         <div className="fx-tracking-disclosure">
           <Info size={17} aria-hidden="true" />
-          <p>
-            <strong>Independent preview.</strong> Results show application shipment records created
-            by this site’s administrator, not live FedEx carrier scans. When configured, the
-            separate Official FedEx API panel below queries FedEx from this server.
-          </p>
+          <p>Tracking details here are entered on this site, not scanned by FedEx.</p>
           <CarrierLink
             href={
               submitted
@@ -427,7 +423,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                 : 'https://www.fedex.com/en-us/tracking.html'
             }
           >
-            Use official tracking <ExternalLink size={14} aria-hidden="true" />
+            Track on FedEx.com <ExternalLink size={14} aria-hidden="true" />
           </CarrierLink>
         </div>
         {!submitted ? (

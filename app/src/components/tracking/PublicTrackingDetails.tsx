@@ -63,8 +63,8 @@ export default function PublicTrackingDetails({ shipment }: { shipment: PublicSh
               <h3>Travel history</h3>
               <p>
                 {hasRouteStages
-                  ? 'Administrator updates plus the completed delivery route. Stages marked “route completed” had no separate update recorded.'
-                  : 'Tracking updates entered by this application’s administrator.'}
+                  ? 'Updates plus the completed delivery route. Stages marked “route completed” had no separate update recorded.'
+                  : 'Tracking updates entered on this site.'}
               </p>
             </div>
             <div className="fx-history-controls">
@@ -151,7 +151,7 @@ export default function PublicTrackingDetails({ shipment }: { shipment: PublicSh
         <TabsContent value="facts" className="fx-detail-panel">
           <h3>Shipment facts</h3>
           <p className="fx-muted">
-            Public details supplied by the administrator. This is not a live carrier record.
+            Public details entered on this site. This is not a live carrier record.
           </p>
           <dl className="fx-facts-grid">
             {[

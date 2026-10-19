@@ -3,6 +3,18 @@ const loopback = new Set(['localhost', '127.0.0.1', '[::1]']);
 export function configuration(env = process.env) {
   const missing = [];
   const databaseURL = env.NEON_DATABASE_URL || env.DATABASE_URL || '';
+  // Migrations take a session-level advisory lock and run DDL, which a
+  // transaction pooler does not handle reliably: the lock can be acquired on one
+  // server connection and released on another, leaving it held and blocking
+  // every later attempt. Neon exposes the pooled endpoint as DATABASE_URL, so
+  // prefer a direct connection for migration work when one is configured.
+  const migrationDatabaseURL =
+    env.DATABASE_URL_UNPOOLED ||
+    env.NEON_DATABASE_URL_UNPOOLED ||
+    env.POSTGRES_URL_NON_POOLING ||
+    databaseURL;
+  const migrationUsesDirectConnection =
+    Boolean(migrationDatabaseURL) && migrationDatabaseURL !== databaseURL;
   // JWT_SECRET is accepted as the signing secret so an existing hosting secret
   // keeps working; AUTH_SECRET still wins when both are present.
   const secret = env.AUTH_SECRET || env.JWT_SECRET || '';
@@ -125,6 +137,8 @@ export function configuration(env = process.env) {
   );
   return {
     databaseURL,
+    migrationDatabaseURL,
+    migrationUsesDirectConnection,
     databaseConfigured,
     imageAdminSecret,
     allowLegacyImageKey,

@@ -106,12 +106,21 @@ export async function buildReport({ config, pool = null, probeModules: shouldPro
 
   // Admin account state needs only pg plus better-auth's pure-JS crypto helper,
   // imported lazily so a failure there cannot break the report.
-  const ownPool = !pool && config.databaseConfigured
+  const migrating = Boolean(config.runAccountMigrations);
+  // Migration work prefers a direct (unpooled) connection; see config.js.
+  const connectionString = migrating
+    ? config.migrationDatabaseURL || config.databaseURL
+    : config.databaseURL;
+  const ownPool = !pool && connectionString
     ? new pg.Pool({
-        connectionString: config.databaseURL,
-        max: 1,
-        connectionTimeoutMillis: 8000,
-        idleTimeoutMillis: 1000,
+        connectionString,
+        // A migration holds one connection for the advisory lock while
+        // better-auth's runner acquires others from the same pool, so max:1
+        // starves it into "timeout exceeded when trying to connect". Read-only
+        // probing needs just one.
+        max: migrating ? 5 : 1,
+        connectionTimeoutMillis: migrating ? 20000 : 8000,
+        idleTimeoutMillis: migrating ? 10000 : 1000,
       })
     : null;
   const activePool = pool || ownPool;
@@ -128,7 +137,12 @@ export async function buildReport({ config, pool = null, probeModules: shouldPro
     if (activePool && config.runAccountMigrations && !report.database.schemaInstalled) {
       try {
         const { runMigrationsOnce } = await import('./auto-migrate.js');
-        report.migration = await runMigrationsOnce({ pool: activePool, config });
+        report.migration = {
+          ...(await runMigrationsOnce({ pool: activePool, config })),
+          // Whether the migration ran on a direct connection rather than
+          // through a transaction pooler. Name only, never the URL.
+          directConnection: Boolean(config.migrationUsesDirectConnection),
+        };
         if (report.migration.applied)
           Object.assign(report.database, await probeSchema(activePool));
       } catch (error) {

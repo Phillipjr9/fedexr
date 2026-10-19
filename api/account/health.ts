@@ -4,6 +4,11 @@ type NodeResponse = {
   end?: (chunk?: string) => void;
 };
 
+// Applying the schema migration creates roughly a dozen tables and indexes over
+// a cold database connection, which does not fit the default budget. Read-only
+// reporting finishes far inside this.
+export const maxDuration = 60;
+
 type NodeProcess = {
   version?: string;
   env?: Record<string, string | undefined>;

@@ -814,7 +814,7 @@ test('automatic route progression advances due shipments on public lookup', asyn
   const progressed = await json(await request('/api/tracking/SERVER-AUTO-1'));
   assert.equal(progressed.body.shipment.status, 'in_transit');
   assert.equal(progressed.body.shipment.events.at(-1).status, 'in_transit');
-  assert.match(progressed.body.shipment.events.at(-1).note, /Automatic update generated/);
+  assert.match(progressed.body.shipment.events.at(-1).note, /Automatic update from this site/);
   assert.equal(progressed.body.shipment.autoProgressEnabled, false);
   assert.equal(progressed.body.shipment.autoProgressNextAt, '');
 
@@ -826,7 +826,7 @@ test('automatic route progression advances due shipments on public lookup', asyn
   const delivered = await json(await request('/api/tracking/SERVER-AUTO-1'));
   assert.equal(delivered.body.shipment.status, 'delivered');
   assert.equal(
-    delivered.body.shipment.events.filter((event) => /Automatic update generated/.test(event.note))
+    delivered.body.shipment.events.filter((event) => /Automatic update from this site/.test(event.note))
       .length,
     4,
   );

@@ -462,8 +462,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                     {latestEvent?.note ? ` Latest update: ${latestEvent.note}` : ''}
                   </p>
                   <p className="fx-hold-alert-note">
-                    This hold reason applies to this shipment record. For a live FedEx
-                    shipment, use the FedEx tracking service.
+                    This hold reason applies to this shipment record.
                   </p>
                 </div>
               </section>

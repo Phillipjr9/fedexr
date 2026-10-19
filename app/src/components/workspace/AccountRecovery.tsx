@@ -151,9 +151,9 @@ export default function AccountRecovery() {
               </button>
             </div>
           </form>
-          <ServiceNotice title="Account email delivery">
-            Recovery requires the configured account service and email transport. A reset link is
-            single-use; no token or passphrase is saved in browser storage.
+          <ServiceNotice title="Account recovery">
+            A single-use reset link is sent to the address on your account. It expires in 15
+            minutes.
           </ServiceNotice>
           <Link to="/login" className="service-text-link mt-6">
             Back to sign-in

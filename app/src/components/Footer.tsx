@@ -151,8 +151,7 @@ export default function Footer() {
         </div>
       </div>
       <p className="site-container project-disclaimer">
-        Independent project, not affiliated with FedEx. These tools are not connected to live FedEx
-        shipping, account, or tracking services.
+        Independent project, not affiliated with FedEx.
       </p>
     </footer>
   );

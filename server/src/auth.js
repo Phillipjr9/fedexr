@@ -6,7 +6,7 @@ export function authOptions(pool, config, mailer) {
     mailer.send({
       to,
       subject,
-      text: `${message}\n\n${url}\n\nThis account belongs to an independent shipping-planning project, not FedEx. If you did not request this message, ignore it.`,
+      text: `${message}\n\n${url}\n\nIf you did not request this message, ignore it.`,
     });
   const validateUser = async (value) => {
     if (
@@ -55,7 +55,7 @@ export function authOptions(pool, config, mailer) {
         deliver(
           user.email,
           'Verify your workspace email',
-          'Verify your email for this independent workspace. This link expires in one hour.',
+          'Verify your email for this workspace. This link expires in one hour.',
           url,
         ),
     },

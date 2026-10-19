@@ -6,9 +6,7 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
-  Download,
   ExternalLink,
-  Info,
   Mail,
   MoreVertical,
   PackageSearch,
@@ -37,7 +35,7 @@ import BrandImage from '@/components/BrandImage';
 import PublicTrackingDetails from '@/components/tracking/PublicTrackingDetails';
 import { useTrackingAttachment } from '@/hooks/use-tracking-attachment';
 import { useWorkspace } from '@/context/workspace';
-import { attachmentCategory, officialTrackingURL } from '@/lib/tracking';
+import { attachmentCategory } from '@/lib/tracking';
 import {
   displayShipmentEvents,
   holdReasonLabel,
@@ -414,17 +412,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
       </header>
       <div className="fx-track-container">
         <div className="fx-tracking-disclosure">
-          <Info size={17} aria-hidden="true" />
           <p>Tracking details here are entered on this site, not scanned by FedEx.</p>
-          <CarrierLink
-            href={
-              submitted
-                ? officialTrackingURL(submitted)
-                : 'https://www.fedex.com/en-us/tracking.html'
-            }
-          >
-            Track on FedEx.com <ExternalLink size={14} aria-hidden="true" />
-          </CarrierLink>
         </div>
         {!submitted ? (
           <section className="fx-tracking-entry" aria-labelledby="tracking-entry-heading">
@@ -523,24 +511,9 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                 </p>
                 <p className="fx-signature-note">
                   {shipment
-                    ? 'Application record only. No carrier delivery or signature is verified here.'
+                    ? 'Delivery and signature details are shown as recorded for this shipment.'
                     : 'No shipment details are shown for an unmatched tracking number.'}
                 </p>
-                <CarrierLink href={officialTrackingURL(submitted)} className="fx-proof-link">
-                  <Download size={17} aria-hidden="true" />
-                  Obtain proof of delivery
-                </CarrierLink>
-                <p className="fx-official-note">Opens the FedEx tracking tool.</p>
-                <div className="fx-delivery-help">
-                  <PackageSearch size={35} strokeWidth={1.4} aria-hidden="true" />
-                  <div>
-                    <h3>Need help with a real delivery?</h3>
-                    <p>Check current updates or explore delivery options on FedEx.</p>
-                    <CarrierLink href={officialTrackingURL(submitted)}>
-                      Go to FedEx tracking <ExternalLink size={14} aria-hidden="true" />
-                    </CarrierLink>
-                  </div>
-                </div>
               </div>
               <div className="fx-delivery-status">
                 <p className="fx-eyebrow">Delivery status</p>

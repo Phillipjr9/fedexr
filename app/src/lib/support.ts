@@ -13,13 +13,13 @@ export interface HelpArticle {
 export const helpArticles: HelpArticle[] = [
   {
     id: 'track-package', category: 'tracking', question: 'How do I track a package?',
-    answer: 'Enter a tracking number on our tracking page. Results shown there are entered on this site, not scanned by a carrier. For a live shipment, use the FedEx tracking page.',
+    answer: 'Enter a tracking number on our tracking page to see the updates recorded for that shipment.',
     keywords: 'parcel status delivery tracking number',
     link: { label: 'View tracking', href: '/tracking' },
   },
   {
     id: 'missing-delivery', category: 'tracking', question: 'My package says delivered, but I cannot find it. What should I do?',
-    answer: 'Review the tracking details, check the delivery area, and ask others at the address. If you still need help, contact FedEx through its customer support page. A shipment cannot be investigated or a support case opened here.',
+    answer: 'Review the tracking details, check the delivery area, and ask others at the address. If you still need help, contact FedEx through its customer support page.',
     keywords: 'missing lost stolen proof delivery package receiving',
     link: { label: 'Get delivery support', href: 'https://www.fedex.com/en-us/customer-support.html' },
   },
@@ -67,15 +67,9 @@ export const helpArticles: HelpArticle[] = [
   },
   {
     id: 'file-claim', category: 'returns', question: 'How do I file a claim for a lost or damaged shipment?',
-    answer: 'Use the FedEx claims page for eligibility, required documents, deadlines, and case status. This project cannot submit claims, issue refunds, or connect you to a real representative.',
+    answer: 'Use the FedEx claims page for eligibility, required documents, deadlines, and case status.',
     keywords: 'claim claims damaged damage lost reimbursement compensation refund',
     link: { label: 'Go to FedEx claims', href: 'https://www.fedex.com/en-us/customer-support/claims.html' },
-  },
-  {
-    id: 'sample-account', category: 'shipping', question: 'Is this site connected to my FedEx account?',
-    answer: 'No. Shipping, tracking, store, and account tools here do not access a FedEx account or live carrier services. Do not enter account credentials or payment details. Use fedex.com for account services.',
-    keywords: 'account login sign in password privacy personal data payment',
-    link: { label: 'Visit fedex.com', href: 'https://www.fedex.com/en-us/home.html' },
   },
 ];
 

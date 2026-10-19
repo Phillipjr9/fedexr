@@ -32,18 +32,18 @@ const quickReplies = ['Track my package', 'Shipping rates', 'Schedule a pickup',
 const responses: { keys: string[]; text: string; links: MessageLink[] }[] = [
   {
     keys: ['agent', 'human', 'representative'],
-    text: 'No live agents are connected to this assistant. For help with a shipment, contact FedEx support.',
-    links: [{ label: 'Contact real FedEx support', href: 'https://www.fedex.com/en-us/customer-support.html' }],
+    text: 'No live agents are connected to this assistant.',
+    links: [{ label: 'Contact FedEx support', href: 'https://www.fedex.com/en-us/customer-support.html' }],
   },
   {
     keys: ['claim', 'damage', 'lost'],
-    text: 'This project cannot submit claims or investigate shipments. Use the FedEx claims page to check eligibility, documents, and deadlines.',
+    text: 'Damaged or lost shipments are handled through the claims page, which explains eligibility, required documents, and deadlines.',
     links: [{ label: 'FedEx claims', href: 'https://www.fedex.com/en-us/customer-support/claims.html' }],
   },
   {
     keys: ['track', 'package status'],
-    text: 'Tracking results on this site are entered here, not scanned by a carrier. For a live shipment, use the FedEx tracking page.',
-    links: [{ label: 'View tracking', href: '/tracking' }, { label: 'Track on fedex.com', href: 'https://www.fedex.com/en-us/tracking.html' }],
+    text: 'Enter the tracking number on the tracking page to see the updates recorded for that shipment.',
+    links: [{ label: 'View tracking', href: '/tracking' }],
   },
   {
     keys: ['rate', 'quote', 'cost', 'price'],

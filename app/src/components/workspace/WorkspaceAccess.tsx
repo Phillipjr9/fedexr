@@ -102,7 +102,7 @@ export default function WorkspaceAccess({ admin = false }: { admin?: boolean }) 
         cause instanceof Error
           ? cause.message
           : admin
-            ? 'Administrator access could not be completed.'
+            ? 'Access could not be completed.'
             : 'Sign-in could not be completed.',
       );
     } finally {
@@ -112,10 +112,10 @@ export default function WorkspaceAccess({ admin = false }: { admin?: boolean }) 
 
   const title = creating
     ? admin
-      ? 'Set up your admin workspace'
+      ? 'Set up your workspace'
       : 'Create your account'
     : admin
-      ? 'Administrator sign-in'
+      ? 'Management sign-in'
       : 'Sign in to your account';
 
   return (
@@ -124,15 +124,15 @@ export default function WorkspaceAccess({ admin = false }: { admin?: boolean }) 
         <nav className="service-breadcrumbs" aria-label="Breadcrumb">
           <Link to="/">Home</Link>
           <span aria-hidden="true">/</span>
-          <span aria-current="page">{admin ? 'Administrator access' : 'Sign in'}</span>
+          <span aria-current="page">{admin ? 'Restricted access' : 'Sign in'}</span>
         </nav>
         <div className="workspace-access-grid">
           <div className="workspace-access-form">
             <p className="service-eyebrow">
               {admin
                 ? creating
-                  ? 'First-time administrator setup'
-                  : 'Administrator access'
+                  ? 'First-time setup'
+                  : 'Restricted access'
                 : creating
                   ? 'New customer account'
                   : 'Customer access'}
@@ -141,10 +141,10 @@ export default function WorkspaceAccess({ admin = false }: { admin?: boolean }) 
             <p>
               {creating
                 ? admin
-                  ? 'Choose your own administrator passphrase. There is no default password.'
-                  : 'Create an account to save shipment plans, keep an address book, and follow shipments an administrator creates for you.'
+                  ? 'Choose your own passphrase. There is no default password.'
+                  : 'Create an account to save shipment plans, keep an address book, and follow shipments created for you.'
                 : admin
-                  ? 'Sign in with your administrator credentials to manage shipments and workspace settings.'
+                  ? 'Sign in to manage shipments and workspace settings.'
                   : 'Sign in to reach your saved plans, address book, and shipment updates.'}
             </p>
 
@@ -175,21 +175,21 @@ export default function WorkspaceAccess({ admin = false }: { admin?: boolean }) 
 
             {admin && !server && !hasOwner && !creating && (
               <p className="workspace-muted workspace-access-hint">
-                No administrator exists in this browser yet.{' '}
+                No owner profile exists in this browser yet.{' '}
                 <button
                   type="button"
                   className="service-text-link"
                   onClick={() => setCreate(true)}
                 >
-                  Set up the administrator profile
+                  Set up the owner profile
                 </button>
               </p>
             )}
 
             {!admin && user?.role === 'admin' && (
               <p className="workspace-access-role-note">
-                You are signed in as an administrator.{' '}
-                <Link to="/admin">Open the admin dashboard</Link>.
+                You are signed in with management access.{' '}
+                <Link to="/admin">Open the dashboard</Link>.
               </p>
             )}
 
@@ -295,7 +295,7 @@ export default function WorkspaceAccess({ admin = false }: { admin?: boolean }) 
                   ? 'Verifying…'
                   : creating
                     ? admin
-                      ? 'Create administrator profile'
+                      ? 'Create owner profile'
                       : 'Create account'
                     : 'Sign in'}
                 <ArrowRight size={17} aria-hidden="true" />
@@ -311,7 +311,7 @@ export default function WorkspaceAccess({ admin = false }: { admin?: boolean }) 
 
           <aside
             className="workspace-access-aside"
-            aria-label={admin ? 'Administrator features' : 'Account features'}
+            aria-label={admin ? 'Management features' : 'Account features'}
           >
             <BrandImage image={siteImages.ground} className="workspace-access-photo" priority />
             <div>
@@ -320,8 +320,8 @@ export default function WorkspaceAccess({ admin = false }: { admin?: boolean }) 
               </h2>
               <p>
                 {admin
-                  ? 'Create shipment records, manage tracking, review plans, and configure the workspace with full administrator controls.'
-                  : 'Save shipment plans, store your addresses once, and follow the shipments an administrator creates for you.'}
+                  ? 'Create shipment records, manage tracking, review plans, and configure the workspace with full controls.'
+                  : 'Save shipment plans, store your addresses once, and follow the shipments created for you.'}
               </p>
               <ul>
                 {admin ? (
@@ -336,7 +336,7 @@ export default function WorkspaceAccess({ admin = false }: { admin?: boolean }) 
                     </li>
                     <li>
                       <ShieldCheck size={21} aria-hidden="true" />
-                      <span>Full administrator controls</span>
+                      <span>Full management controls</span>
                     </li>
                   </>
                 ) : (
@@ -357,7 +357,7 @@ export default function WorkspaceAccess({ admin = false }: { admin?: boolean }) 
                 )}
               </ul>
               <p className="workspace-access-limit">
-                Live shipping, billing, rewards, and carrier accounts remain on the official FedEx
+                Live shipping, billing, rewards, and carrier accounts remain on the FedEx
                 website.
               </p>
             </div>

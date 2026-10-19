@@ -59,7 +59,7 @@ function AddressFields({
     <div>
       <h2 id="shipment-step-title">{direction === 'from' ? 'Ship From' : 'Ship To'}</h2>
       <p className="workspace-panel-intro">
-        Use non-sensitive planning details. Sample estimates support U.S. ZIP-code routes only.
+        Use non-sensitive planning details. Estimates support U.S. ZIP-code routes only.
       </p>
       <div className="workspace-form-grid">
         {(
@@ -254,10 +254,10 @@ export default function ShipmentWizard() {
       `Planned weight: ${weight} lb`,
       notes(),
       `Service to explore: ${selectedService?.name || 'Not selected'}`,
-      `Illustrative local estimate: $${selectedService?.price.toFixed(2) || '0.00'}—not an amount owed`,
+      `Estimate: $${selectedService?.price.toFixed(2) || '0.00'} — not an amount owed`,
       `Local photo filename: ${image?.name || 'None'} (photo contents are not included or uploaded)`,
       '',
-      'Confirm prices, restrictions, dates, and labels on the official FedEx website. No payment information is collected here.',
+      'Confirm prices, restrictions, dates, and labels on fedex.com. No payment information is collected here.',
     ]
       .filter((line) => line !== undefined)
       .join('\n');
@@ -268,7 +268,7 @@ export default function ShipmentWizard() {
   return (
     <div className="shipment-wizard">
       <p className="text-sm text-gray-600 mb-6">
-        Planned ship date: {shipDate}. All prices below are illustrative sample estimates.
+        Planned ship date: {shipDate}. All prices below are estimates.
       </p>
       <ol className="shipment-progress" aria-label="Shipment planning steps">
         {steps.map((item, index) => (
@@ -453,7 +453,7 @@ export default function ShipmentWizard() {
           <div>
             <h2 id="shipment-step-title">Choose a Service</h2>
             <p className="workspace-panel-intro">
-              Illustrative local estimates only—not carrier tariffs or delivery commitments.
+              Estimates only — not carrier tariffs or delivery commitments.
             </p>
             <div className="shipment-service-options">
               {services.map((entry) => (
@@ -468,7 +468,7 @@ export default function ShipmentWizard() {
                 >
                   <span>
                     <strong>{entry.name}</strong>
-                    <span>{entry.description} Sample estimate only.</span>
+                    <span>{entry.description} Estimate only.</span>
                   </span>
                   <strong>${entry.price.toFixed(2)}</strong>
                 </button>
@@ -480,7 +480,7 @@ export default function ShipmentWizard() {
           <div>
             <h2 id="shipment-step-title">Review your shipment plan</h2>
             <p className="workspace-panel-intro">
-              Save a local record or take a brief to the official carrier tools. Payment details are
+              Save a record or take a brief to the carrier tools. Payment details are
               not collected.
             </p>
             <dl className="shipment-review">
@@ -523,7 +523,7 @@ export default function ShipmentWizard() {
                 </dd>
               </div>
               <div>
-                <dt>Illustrative estimate</dt>
+                <dt>Estimate</dt>
                 <dd>
                   ${selectedService?.price.toFixed(2)}
                   <span>Not a current carrier quote or an amount owed.</span>
@@ -557,7 +557,7 @@ export default function ShipmentWizard() {
                 </p>
               )}
               <ExternalLink href="https://www.fedex.com/en-us/shipping/ship-manager/login.html">
-                Continue to official shipping tools
+                Continue to shipping tools
               </ExternalLink>
             </div>
           </div>

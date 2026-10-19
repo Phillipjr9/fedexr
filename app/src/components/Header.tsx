@@ -109,13 +109,13 @@ const searchPages = [
   },
   {
     label: 'Get a shipping quote',
-    description: 'Compare sample rates and shipping options',
+    description: 'Compare rates and shipping options',
     href: '/rate-calculator',
     keywords: 'rates price cost calculator',
   },
   {
     label: 'Schedule a pickup',
-    description: 'Prepare a plan and continue to official FedEx booking',
+    description: 'Prepare a plan and continue to FedEx booking',
     href: '/shipping/pickup',
     keywords: 'collection collect pickup driver',
   },
@@ -139,7 +139,7 @@ const searchPages = [
   },
   {
     label: 'Returns & claims',
-    description: 'Prepare local notes and find official return or claim tools',
+    description: 'Prepare notes and find return or claim tools',
     href: '/returns',
     keywords: 'return returns refund claim claims damage damaged',
   },
@@ -209,7 +209,7 @@ export default function Header() {
                 <Link
                   to={user.role === 'admin' ? '/admin' : '/dashboard'}
                   className="header-account"
-                  aria-label={user.role === 'admin' ? 'Open admin dashboard' : 'Open my account'}
+                  aria-label={user.role === 'admin' ? 'Open the dashboard' : 'Open my account'}
                 >
                   <span>{user.role === 'admin' ? 'Dashboard' : 'My Account'}</span>
                   {user.role === 'admin' ? (

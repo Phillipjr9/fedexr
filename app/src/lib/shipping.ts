@@ -22,7 +22,7 @@ export function quoteErrors(input: QuoteInput): Partial<Record<keyof QuoteInput,
   if (!isUSZip(input.to)) errors.to = 'Enter a valid U.S. ZIP code (12345 or 12345-6789).';
   const weight = Number(input.weight);
   if (!Number.isFinite(weight) || weight < 0.1 || weight > 150) {
-    errors.weight = 'For this sample, enter a weight from 0.1 to 150 lb.';
+    errors.weight = 'Enter a weight from 0.1 to 150 lb.';
   }
   const dimensions = ['length', 'width', 'height'] as const;
   if (dimensions.some((key) => input[key].trim() !== '')) {

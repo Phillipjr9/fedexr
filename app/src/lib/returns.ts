@@ -67,20 +67,20 @@ export function photoFileError(file: File): string {
 
 export function nextSteps(plan: ReturnPlan): string[] {
   if (plan.mode === 'claim') return [
-    'Check the official claims website for eligibility, deadlines, and required documents. Sign in there to submit a real claim.',
+    'Check the FedEx claims website for eligibility, deadlines, and required documents. Sign in there to submit a real claim.',
     'Gather the tracking details, proof of value or purchase receipt, and relevant photos when available.',
-    'For damage or missing contents, retain the original packaging and contents until the official claim is resolved.',
+    'For damage or missing contents, retain the original packaging and contents until the claim is resolved.',
     'Nothing in this local brief confirms claim eligibility, approves a refund, or establishes a resolution date.',
   ];
   const labelStep = plan.label === 'printed'
     ? 'Follow the retailer’s return instructions, pack the item, and attach its valid return label.'
     : plan.label === 'qr'
       ? 'Use the retailer’s QR code at a participating location listed in its instructions. Do not assume every location accepts every return program.'
-      : 'Contact the retailer to check its return policy and request a label. If needed, review the official FedEx label-creation options.';
+      : 'Contact the retailer to check its return policy and request a label. If needed, review the FedEx label-creation options.';
   return [
     labelStep,
     'Check packaging requirements and whether the return program includes any shipping fees before sending the item.',
-    'Keep the drop-off receipt and use the actual return tracking number to follow the shipment on FedEx’s official website.',
+    'Keep the drop-off receipt and use the actual return tracking number to follow the shipment on fedex.com.',
     'The retailer, not this project, determines its refund or replacement policy. No return, label, or refund is created here.',
   ];
 }
@@ -89,9 +89,9 @@ export function returnBriefText(plan: ReturnPlan, photos: LocalPhoto[]): string 
   const reasons = plan.mode === 'claim' ? claimReasons : returnReasons;
   return [
     `${plan.mode === 'claim' ? 'CLAIM' : 'RETURN'} PREPARATION BRIEF`,
-    'Independent sample — NOTHING has been submitted to FedEx or a retailer.',
-    'This is not a shipping label, case confirmation, refund approval, or official document.',
-    'No shipment lookup has been performed. Use official tools to verify an actual shipment.',
+    'NOTHING has been submitted to FedEx or a retailer.',
+    'This is not a shipping label, case confirmation, refund approval, or formal document.',
+    'No shipment lookup has been performed. Use FedEx tools to verify an actual shipment.',
     '',
     `Reference: ${plan.reference.trim() || 'Not provided (no shipment lookup performed)'}`,
     `Plan type: ${plan.mode === 'claim' ? 'Shipping claim preparation' : 'Retailer return preparation'}`,
@@ -106,7 +106,7 @@ export function returnBriefText(plan: ReturnPlan, photos: LocalPhoto[]): string 
     'NEXT STEPS',
     ...nextSteps(plan).map((step, index) => `${index + 1}. ${step}`),
     '',
-    `Official resource: ${plan.mode === 'claim' ? officialClaimCenter : officialReturnGuide}`,
-    'Enter details and attach any required files on the official site; this brief is not transferred automatically.',
+    `Resource: ${plan.mode === 'claim' ? officialClaimCenter : officialReturnGuide}`,
+    'Enter details and attach any required files on the FedEx site; this brief is not transferred automatically.',
   ].join('\n');
 }

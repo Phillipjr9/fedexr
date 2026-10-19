@@ -1,5 +1,5 @@
 // Curated examples, not a live/complete/nearest-location feed.
-// Addresses and phone numbers reviewed in the official directory on October 13, 2026.
+// Addresses and phone numbers reviewed in the FedEx directory on October 13, 2026.
 export const officialLocationDirectory = 'https://local.fedex.com/en/search';
 
 export type LocationType = 'office' | 'ship-center' | 'retail';

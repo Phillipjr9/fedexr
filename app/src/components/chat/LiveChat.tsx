@@ -22,7 +22,7 @@ interface Message {
 function initialMessages(): Message[] {
   return [{
     id: 'welcome',
-    text: 'Hello! This is an automated shipping guide. I can point you to local tools and official FedEx resources. Please do not enter account, payment, or personal information.',
+    text: 'Hello! This is an automated shipping guide. I can point you to tracking, shipping, locations, and print tools. Please do not enter account, payment, or personal information.',
     sender: 'bot', timestamp: new Date(),
   }];
 }
@@ -32,37 +32,37 @@ const quickReplies = ['Track my package', 'Shipping rates', 'Schedule a pickup',
 const responses: { keys: string[]; text: string; links: MessageLink[] }[] = [
   {
     keys: ['agent', 'human', 'representative'],
-    text: 'No live agents are connected to this assistant. For help with a real shipment, contact FedEx through its official support website.',
+    text: 'No live agents are connected to this assistant. For help with a shipment, contact FedEx support.',
     links: [{ label: 'Contact real FedEx support', href: 'https://www.fedex.com/en-us/customer-support.html' }],
   },
   {
     keys: ['claim', 'damage', 'lost'],
-    text: 'This project cannot submit claims or investigate shipments. Use the official claims page to check eligibility, documents, and deadlines.',
-    links: [{ label: 'Official FedEx claims', href: 'https://www.fedex.com/en-us/customer-support/claims.html' }],
+    text: 'This project cannot submit claims or investigate shipments. Use the FedEx claims page to check eligibility, documents, and deadlines.',
+    links: [{ label: 'FedEx claims', href: 'https://www.fedex.com/en-us/customer-support/claims.html' }],
   },
   {
     keys: ['track', 'package status'],
-    text: 'The local tracking page is a simulation. For an actual package, use the official FedEx tracking page.',
-    links: [{ label: 'View sample tracking', href: '/tracking' }, { label: 'Track a real shipment', href: 'https://www.fedex.com/en-us/tracking.html' }],
+    text: 'Tracking results on this site are entered here, not scanned by a carrier. For a live shipment, use the FedEx tracking page.',
+    links: [{ label: 'View tracking', href: '/tracking' }, { label: 'Track on fedex.com', href: 'https://www.fedex.com/en-us/tracking.html' }],
   },
   {
     keys: ['rate', 'quote', 'cost', 'price'],
-    text: 'Compare illustrative estimates in the sample calculator. It does not provide live carrier prices or guaranteed delivery dates.',
-    links: [{ label: 'Open sample rate calculator', href: '/rate-calculator' }, { label: 'Get a live FedEx quote', href: 'https://www.fedex.com/en-us/online/rating.html' }],
+    text: 'Compare estimates in the rate calculator. Prices and delivery dates are not guaranteed.',
+    links: [{ label: 'Open the rate calculator', href: '/rate-calculator' }, { label: 'Get a FedEx quote', href: 'https://www.fedex.com/en-us/online/rating.html' }],
   },
   {
     keys: ['pickup', 'pick up', 'collection'],
-    text: 'Prepare a pickup plan here, then complete the reservation on fedex.com. No pickup or driver is booked by this sample.',
+    text: 'Prepare a pickup plan here, then complete the reservation on fedex.com. No pickup or driver is booked here.',
     links: [{ label: 'Prepare a pickup plan', href: '/shipping/pickup' }],
   },
   {
     keys: ['location', 'store', 'nearby', 'zip'],
-    text: 'Our locations page contains verified New York examples, not live nearest-location results. The official locator covers other areas and current services.',
-    links: [{ label: 'Browse saved New York locations', href: '/locations' }, { label: 'Open the official locator', href: 'https://local.fedex.com/en/search' }],
+    text: 'Our locations page contains verified New York examples, not live nearest-location results. The FedEx locator covers other areas and current services.',
+    links: [{ label: 'Browse saved New York locations', href: '/locations' }, { label: 'Open the FedEx locator', href: 'https://local.fedex.com/en/search' }],
   },
   {
     keys: ['print', 'design', 'poster', 'business card'],
-    text: 'Choose a product and prepare a local print brief. Files are not uploaded, and no order is placed until you use the official FedEx Office website.',
+    text: 'Choose a product and prepare a local print brief. Files are not uploaded, and no order is placed until you use the FedEx Office website.',
     links: [{ label: 'Prepare a print project', href: '/design-print' }],
   },
 ];
@@ -105,7 +105,7 @@ export default function LiveChat() {
       id: `user-${++sequence.current}`, text: trimmed, sender: 'user', timestamp: new Date(),
     }, {
       id: `bot-${++sequence.current}`,
-      text: match?.text || 'This automated guide can point you to shipping, tracking, locations, and print tools. Browse our help articles or use the official FedEx support website for a real shipment.',
+      text: match?.text || 'This automated guide can point you to shipping, tracking, locations, and print tools. Browse our help articles or contact FedEx support.',
       links: match?.links || [{ label: 'Browse help articles', href: '/support' }],
       sender: 'bot', timestamp: new Date(),
     }]);

@@ -91,7 +91,7 @@ export interface PublicShipment {
   internalNote: string;
   isPublic: boolean;
   archivedAt: string | null;
-  /** Automatic route progression (administrator-enabled simulation). */
+  /** Automatic route progression, enabled per shipment. */
   autoProgressEnabled: boolean;
   autoProgressIntervalMinutes: number;
   /** ISO time the next automatic stage is due; '' when not scheduled. */

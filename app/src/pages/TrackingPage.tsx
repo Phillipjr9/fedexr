@@ -68,7 +68,7 @@ function CarrierLink({
       rel="noopener noreferrer"
     >
       {children}
-      <span className="sr-only"> (official external service, opens in a new tab)</span>
+      <span className="sr-only"> (opens in a new tab)</span>
     </a>
   );
 }
@@ -135,7 +135,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
   }, [focusOnMountRef]);
   useEffect(() => {
     const previous = document.title;
-    document.title = 'FedEx Tracking | Independent workspace';
+    document.title = 'FedEx Tracking';
     return () => {
       document.title = previous;
     };
@@ -272,22 +272,22 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
   const summaryStagePhoto = delivered ? deliveryPhoto : onRoutePhoto;
   const summaryStageLabel = delivered ? 'Delivery' : 'On-route';
 
-  // Public tracking shows an image only when an administrator added one. When
+  // Public tracking shows an image only when one was added. When
   // present it renders full size inline rather than as a small file chip, and
   // selecting it opens the enlarged view.
   const trackingPhoto = summaryStagePhoto
     ? {
         src: summaryStagePhoto,
         alt: `${summaryStageLabel.toLowerCase()} photo for this shipment`,
-        caption: `${summaryStageLabel} photo added by the shipment administrator.`,
+        caption: `${summaryStageLabel} photo added to this shipment.`,
         enlargeLabel: `Open the ${summaryStageLabel.toLowerCase()} photo full size`,
         onClick: () => setStagePhotoView({ src: summaryStagePhoto, label: summaryStageLabel }),
       }
     : attachment.image
       ? {
           src: attachment.image,
-          alt: 'Shipment image added by the administrator',
-          caption: 'Image added by the shipment administrator.',
+          alt: 'Shipment image',
+          caption: 'Image added to this shipment.',
           enlargeLabel: 'Open the shipment image full size',
           onClick: () => setImageOpen(true),
         }
@@ -372,7 +372,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                   className="fx-icon-button fx-print-button"
                   type="button"
                   onClick={() => window.print()}
-                  aria-label="Print sample tracking details"
+                  aria-label="Print tracking details"
                 >
                   <Printer size={21} aria-hidden="true" />
                 </button>
@@ -400,7 +400,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                       Copy tracking reference
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => window.print()}>
-                      Print sample details
+                      Print details
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={startAgain}>
                       Track another shipment
@@ -444,7 +444,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
               </CarrierLink>
             </nav>
             <p className="fx-entry-instruction">
-              Enter the tracking number supplied by the administrator to view shipment status.
+              Enter your tracking number to view shipment status.
             </p>
             {form}
             <div className="fx-entry-help">
@@ -452,7 +452,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
             </div>
             <p className="fx-entry-limit">
               One reference at a time in this preview. Reference, TCN, and proof-of-delivery
-              services open on the official FedEx website.
+              services open on fedex.com.
             </p>
           </section>
         ) : (
@@ -474,9 +474,8 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                     {latestEvent?.note ? ` Latest update: ${latestEvent.note}` : ''}
                   </p>
                   <p className="fx-hold-alert-note">
-                    This hold reason was selected by the shipment administrator for this
-                    application record. For a real FedEx shipment, use the official FedEx tracking
-                    service.
+                    This hold reason applies to this shipment record. For a live FedEx
+                    shipment, use the FedEx tracking service.
                   </p>
                 </div>
               </section>
@@ -516,10 +515,10 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                 <p className="fx-delivery-description">
                   {shipment
                     ? delivered
-                      ? 'The administrator has recorded this shipment as delivered.'
+                      ? 'This shipment is recorded as delivered.'
                       : `Current location: ${shipment.currentLocation}.`
                     : lookupLoading
-                      ? 'Please wait while the application checks for a public shipment.'
+                      ? 'Please wait while we look up this shipment.'
                       : 'Check the number and try again, or ask the sender to confirm it.'}
                 </p>
                 <p className="fx-signature-note">
@@ -531,14 +530,14 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                   <Download size={17} aria-hidden="true" />
                   Obtain proof of delivery
                 </CarrierLink>
-                <p className="fx-official-note">Opens the official FedEx tracking tool.</p>
+                <p className="fx-official-note">Opens the FedEx tracking tool.</p>
                 <div className="fx-delivery-help">
                   <PackageSearch size={35} strokeWidth={1.4} aria-hidden="true" />
                   <div>
                     <h3>Need help with a real delivery?</h3>
                     <p>Check current updates or explore delivery options on FedEx.</p>
                     <CarrierLink href={officialTrackingURL(submitted)}>
-                      Go to official tracking <ExternalLink size={14} aria-hidden="true" />
+                      Go to FedEx tracking <ExternalLink size={14} aria-hidden="true" />
                     </CarrierLink>
                   </div>
                 </div>
@@ -783,8 +782,8 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
             )}
             <p className="fx-result-limit">
               {shipment
-                ? 'Delivery actions and notifications are handled on the official FedEx website; nothing is submitted to the carrier here.'
-                : 'Only administrator-created public shipments can be tracked here. Use official FedEx tracking for a carrier shipment.'}
+                ? 'Delivery actions and notifications are handled on fedex.com; nothing is submitted to the carrier here.'
+                : 'Only shipments created on this site can be tracked here. Use FedEx tracking for a carrier shipment.'}
             </p>
           </>
         )}
@@ -798,7 +797,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                 image: siteImages.mobile,
                 title: 'Tap into more convenience',
                 description:
-                  'Track packages, manage deliveries, and find shipping tools with the official FedEx Mobile app.',
+                  'Track packages, manage deliveries, and find shipping tools with the FedEx Mobile app.',
                 href: 'https://www.fedex.com/en-us/mobile.html',
                 link: 'Explore the mobile app',
               },
@@ -892,8 +891,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
             {stagePhotoView ? `Public ${stagePhotoView.label.toLowerCase()} photo` : 'Public photo'}
           </DialogTitle>
           <DialogDescription>
-            Added by the shipment administrator to this application record—not carrier-provided
-            delivery proof.
+            Added to this shipment record — not carrier-provided delivery proof.
           </DialogDescription>
           {stagePhotoView && (
             <img
@@ -912,7 +910,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
       <Dialog open={imageOpen && Boolean(attachment.image)} onOpenChange={setImageOpen}>
         <DialogContent className="fx-private-image-dialog">
           <DialogTitle>Shipment image</DialogTitle>
-          <DialogDescription>Added by the shipment administrator for this tracking number.</DialogDescription>
+          <DialogDescription>Added for this tracking number.</DialogDescription>
           {attachment.image && <img src={attachment.image} alt="Shipment image enlarged" />}
           <DialogClose asChild>
             <button className="fx-outline-button" type="button">

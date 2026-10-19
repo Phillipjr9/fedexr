@@ -45,9 +45,8 @@ function CreateShipmentPage() {
         </h1>
         <div className="max-w-4xl mx-auto mb-7">
           <ServiceNotice title="Shipment planning tool">
-            Prepare a local plan or download a brief. This form does not create a FedEx label, book
-            a shipment, or collect payment information. Use non-sensitive details; shipping and
-            billing stay on the official carrier website.
+            Prepare a plan or download a brief. This form does not create a label, book a shipment,
+            or collect payment information.
           </ServiceNotice>
         </div>
         <ShipmentWizard />

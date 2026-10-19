@@ -130,9 +130,9 @@ export default function PublicShipmentDetails({
       >
         <DialogTitle>Shipment operations</DialogTitle>
         <DialogDescription>
-          Manage the application shipment {shipment.trackingNumber}. Internal notes and archived
-          records are administrator-only; public tracking shows only the public fields and events
-          below. This is not a live carrier record.
+          Manage shipment {shipment.trackingNumber}. Internal notes and archived records stay private;
+          public tracking shows only the public fields and events below. This is not a live
+          carrier record.
         </DialogDescription>
 
         {shipment.archivedAt && (
@@ -336,7 +336,7 @@ export default function PublicShipmentDetails({
               <p className="workspace-operation-help" role="status">
                 {shipment.autoProgressEnabled
                   ? `On — next automatic update ${shipment.autoProgressNextAt ? `due ${formatDateTime(shipment.autoProgressNextAt)}` : 'scheduled'}.`
-                  : 'Off — the route only changes when an administrator updates it.'}
+                  : 'Off — the route only changes when you update it.'}
               </p>
               <div className="workspace-operation-actions">
                 <div className="service-field">
@@ -417,10 +417,10 @@ export default function PublicShipmentDetails({
         </section>
 
         <section className="workspace-operation-section" aria-labelledby="shipment-internal-heading">
-          <h3 id="shipment-internal-heading">Internal administrator note</h3>
+          <h3 id="shipment-internal-heading">Internal note</h3>
           <div className="service-field">
             <label htmlFor={`shipment-internal-note-${shipment.id}`}>
-              Internal note (administrators only)
+              Internal note (not shown publicly)
             </label>
             <textarea
               id={`shipment-internal-note-${shipment.id}`}

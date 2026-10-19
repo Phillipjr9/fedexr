@@ -25,8 +25,8 @@ export default function LocationsPage() {
 
   return (
     <div className="service-page">
-      <ServiceHero eyebrow="Locations" title="Find a FedEx location" description="Find a place to ship, pack, or print. Browse verified New York location examples here, or use the official FedEx locator for live results in your area." image={siteImages.officeLocation}>
-        <ExternalLink href={officialLocationDirectory} className="brand-button brand-button-orange">Open the official locator</ExternalLink>
+      <ServiceHero eyebrow="Locations" title="Find a FedEx location" description="Find a place to ship, pack, or print. Browse verified New York location examples here, or use the FedEx locator for live results in your area." image={siteImages.officeLocation}>
+        <ExternalLink href={officialLocationDirectory} className="brand-button brand-button-orange">Open the FedEx locator</ExternalLink>
       </ServiceHero>
       <div className="site-container">
         <section className="service-section service-panel" aria-labelledby="location-search-title">
@@ -36,7 +36,7 @@ export default function LocationsPage() {
             <label htmlFor="location-query"><span className="sr-only">City, street, or ZIP code</span><input id="location-query" type="search" value={input} onChange={(event) => setInput(event.target.value)} maxLength={100} placeholder="Enter a street, city, or ZIP code" autoComplete="off" /></label>
             <button type="submit" className="brand-button brand-button-outline"><Search size={18} aria-hidden="true" />Search locations</button>
           </form>
-          <ServiceNotice title="Verified examples, not live nearby results">This page contains {verifiedLocations.length} saved New York listings reviewed on October 13, 2026. It is not a complete directory or a nearest-location service. Check official listings for current hours, pickup cutoffs, and available services.</ServiceNotice>
+          <ServiceNotice title="Saved listings">This page shows {verifiedLocations.length} New York locations reviewed on October 13, 2026 — not a complete directory or a nearest-location service. Confirm current hours, pickup cutoffs, and available services before visiting.</ServiceNotice>
         </section>
 
         <section className="service-section" aria-labelledby="location-results-title">
@@ -49,7 +49,7 @@ export default function LocationsPage() {
             {(query || type !== 'all') && <button type="button" className="service-text-link" onClick={reset}>Clear filters</button>}
           </div>
           {locations.length === 0 ? (
-            <div className="service-empty"><h3>No saved locations match this search</h3><p>This small example list only covers New York. It does not mean there are no FedEx locations in your area. Enter your area in the official directory for live results.</p><ExternalLink href={officialLocationDirectory} className="brand-button brand-button-outline">Search the official directory</ExternalLink></div>
+            <div className="service-empty"><h3>No saved locations match this search</h3><p>This small example list only covers New York. It does not mean there are no FedEx locations in your area. Enter your area in the FedEx directory for live results.</p><ExternalLink href={officialLocationDirectory} className="brand-button brand-button-outline">Search the FedEx directory</ExternalLink></div>
           ) : (
             <div className="location-list">
               {locations.map((location) => {
@@ -64,9 +64,9 @@ export default function LocationsPage() {
               })}
             </div>
           )}
-          <p className="location-source">Source: <ExternalLink href="https://local.fedex.com/en-us/ny/new-york">Official New York FedEx directory</ExternalLink>. No fictional addresses, phone numbers, opening statuses, or distances are shown.</p>
+          <p className="location-source">Source: <ExternalLink href="https://local.fedex.com/en-us/ny/new-york">New York FedEx directory</ExternalLink>. No fictional addresses, phone numbers, opening statuses, or distances are shown.</p>
         </section>
-        <section className="service-section service-panel" aria-labelledby="all-locations-title"><h2 id="all-locations-title">Looking somewhere else?</h2><p className="service-panel-intro">The official locator can help you find FedEx Office, FedEx Ship Centers, retail partners, and drop boxes outside this example list. You can enter your area or use its location tools there.</p><ExternalLink href={officialLocationDirectory} className="brand-button brand-button-outline">Find locations nationwide</ExternalLink></section>
+        <section className="service-section service-panel" aria-labelledby="all-locations-title"><h2 id="all-locations-title">Looking somewhere else?</h2><p className="service-panel-intro">The FedEx locator can help you find FedEx Office, FedEx Ship Centers, retail partners, and drop boxes outside this example list. You can enter your area or use its location tools there.</p><ExternalLink href={officialLocationDirectory} className="brand-button brand-button-outline">Find locations nationwide</ExternalLink></section>
       </div>
     </div>
   );

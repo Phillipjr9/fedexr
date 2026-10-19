@@ -215,11 +215,11 @@ export default function CarrierShipmentPanel({
   if (mode !== 'server') {
     return (
       <div className="workspace-carrier-create">
-        <h3>Official shipment creation</h3>
+        <h3>FedEx shipment creation</h3>
         <p className="workspace-muted">
           FedEx shipment creation is enabled on the server, but it requires this dashboard to be
-          opened in server mode with a verified administrator session. Browser-local administrator
-          access cannot submit a FedEx shipment.
+          opened in server mode with a verified session. Browser-local access cannot submit a FedEx
+          shipment.
         </p>
       </div>
     );
@@ -255,7 +255,7 @@ export default function CarrierShipmentPanel({
     <div className="workspace-carrier-create">
       <div className="workspace-carrier-create-heading">
         <div>
-          <h3>Create an official FedEx shipment</h3>
+          <h3>Create an FedEx shipment</h3>
           <p>
             This is separate from application public shipments. Submitting sends the shipment to
             FedEx in the configured {status.environment} environment.
@@ -268,7 +268,7 @@ export default function CarrierShipmentPanel({
           onClick={() => setOpen((value) => !value)}
         >
           <PackagePlus size={17} aria-hidden="true" />
-          {open ? 'Hide shipment form' : 'Create official FedEx shipment'}
+          {open ? 'Hide shipment form' : 'Create FedEx shipment'}
         </button>
       </div>
       {status.environment === 'production' && (

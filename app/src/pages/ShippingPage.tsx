@@ -2,7 +2,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CalendarDays, MapPin, Package, Truck, RotateCcw, ArrowRight } from 'lucide-react';
 import BrandImage from '@/components/BrandImage';
-import { ServiceNotice, ExternalLink, ServiceHero } from '@/components/ServiceLayout';
+import { ExternalLink, ServiceHero } from '@/components/ServiceLayout';
 import { siteImages } from '@/lib/siteAssets';
 import { isUSZip, localDate, quoteParams } from '@/lib/shipping';
 
@@ -29,7 +29,7 @@ export default function ShippingPage() {
       return;
     }
     if (!Number.isFinite(Number(weight)) || Number(weight) < 0.1 || Number(weight) > 150) {
-      setError('For this sample, enter a package weight from 0.1 to 150 lb.');
+      setError('Enter a package weight from 0.1 to 150 lb.');
       weightRef.current?.focus();
       return;
     }
@@ -59,7 +59,7 @@ export default function ShippingPage() {
 
         <section className="service-section service-panel" aria-labelledby="quick-quote-title">
           <h2 id="quick-quote-title">Where is your package going?</h2>
-          <p className="service-panel-intro">Start with your U.S. ZIP codes and package weight to compare sample shipping estimates.</p>
+          <p className="service-panel-intro">Start with your U.S. ZIP codes and package weight to compare shipping estimates.</p>
           <form onSubmit={handleQuote} noValidate>
             <div className="service-form-grid">
               <div className="service-field">
@@ -78,10 +78,9 @@ export default function ShippingPage() {
             {error && <p id="shipping-quote-error" role="alert" className="service-form-error">{error}</p>}
             <div className="service-form-footer">
               <button type="submit" className="brand-button brand-button-orange">Get rates <ArrowRight size={17} aria-hidden="true" /></button>
-              <p>Need a real shipping quote? <ExternalLink href="https://www.fedex.com/en-us/online/rating.html">Get live rates on fedex.com</ExternalLink></p>
+              <p>Need a live quote? <ExternalLink href="https://www.fedex.com/en-us/online/rating.html">Get rates on fedex.com</ExternalLink></p>
             </div>
           </form>
-          <ServiceNotice>Estimates in this project are illustrative, not live FedEx prices. Nothing is booked or charged here.</ServiceNotice>
         </section>
 
         <section className="service-section" aria-labelledby="shipping-options-title">
@@ -99,7 +98,7 @@ export default function ShippingPage() {
             </article>
             <article className="service-card">
               <BrandImage image={siteImages.international} className="service-card-image" />
-              <div className="service-card-content"><h3>International shipping</h3><p>Find the official resources you need for shipping across borders, including customs and documentation.</p><ExternalLink href="https://www.fedex.com/en-us/shipping/international.html">Explore international shipping</ExternalLink></div>
+              <div className="service-card-content"><h3>International shipping</h3><p>Find the FedEx resources you need for shipping across borders, including customs and documentation.</p><ExternalLink href="https://www.fedex.com/en-us/shipping/international.html">Explore international shipping</ExternalLink></div>
             </article>
           </div>
         </section>
@@ -108,7 +107,7 @@ export default function ShippingPage() {
           <BrandImage image={siteImages.packaging} />
           <div className="service-feature-copy">
             <h2 id="packaging-title">The right packaging makes a difference</h2>
-            <p>FedEx offers complimentary packaging for qualifying express services with an eligible account. Other boxes and packing supplies may have a cost. Check the official requirements before ordering.</p>
+            <p>FedEx offers complimentary packaging for qualifying express services with an eligible account. Other boxes and packing supplies may have a cost. Check the current requirements before ordering.</p>
             <div className="service-actions">
               <ExternalLink href="https://www.fedex.com/en-us/shipping/packing/supplies.html" className="brand-button brand-button-outline">Explore packing supplies</ExternalLink>
               <Link to="/store" className="service-text-link">Try the supplies planner</Link>
@@ -118,7 +117,7 @@ export default function ShippingPage() {
 
         <section className="service-section service-panel" aria-labelledby="one-rate-title">
           <div className="service-section-heading">
-            <div><h2 id="one-rate-title">Prefer flat-rate shipping?</h2><p>Explore FedEx One Rate packaging, eligible services, and current pricing on the official website. No sample prices are presented as real offers here.</p></div>
+            <div><h2 id="one-rate-title">Prefer flat-rate shipping?</h2><p>Explore FedEx One Rate packaging, eligible services, and current pricing on fedex.com. Prices shown here are estimates, not offers.</p></div>
             <Truck size={42} color="#4d148c" strokeWidth={1.3} aria-hidden="true" />
           </div>
           <ExternalLink href="https://www.fedex.com/en-us/shipping/one-rate.html" className="brand-button brand-button-outline">Explore FedEx One Rate</ExternalLink>

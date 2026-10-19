@@ -73,7 +73,7 @@ export default function PlanCollection({
       <div className="workspace-panel-heading">
         <div>
           <h2>{admin ? 'All workspace shipment plans' : 'Your shipment plans'}</h2>
-          <p>Draft, review-ready, and archived plans—not live carrier shipments.</p>
+          <p>Draft, review-ready, and archived plans.</p>
         </div>
         <button
           type="button"
@@ -143,7 +143,7 @@ export default function PlanCollection({
           <p>
             {plans.length
               ? 'Try another search or choose all statuses.'
-              : 'Create a local plan to organize recipient, ZIP codes, service, and package details.'}
+              : 'Create a plan to organize recipient, ZIP codes, service, and package details.'}
           </p>
           {plans.length ? (
             <button
@@ -240,7 +240,7 @@ export default function PlanCollection({
                         className="service-text-link"
                         to={`/tracking${plan.reference ? `?number=${encodeURIComponent(plan.reference)}` : ''}`}
                       >
-                        Sample tracking
+                        Track shipment
                       </Link>
                     </td>
                   </tr>

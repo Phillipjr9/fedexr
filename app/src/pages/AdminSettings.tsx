@@ -209,7 +209,7 @@ export default function AdminSettings() {
           <section className="workspace-panel" aria-labelledby="carrier-integration-heading">
             <div className="workspace-panel-heading">
               <div>
-                <h2 id="carrier-integration-heading">Official FedEx API</h2>
+                <h2 id="carrier-integration-heading">FedEx API</h2>
                 <p>
                   Optional server-side carrier integration running beside the application’s own
                   public-shipment records.
@@ -239,10 +239,10 @@ export default function AdminSettings() {
                 <dd>{carrierStatus.accountConfigured ? 'Configured privately' : 'Not configured'}</dd>
               </div>
               <div>
-                <dt>Official shipment creation</dt>
+                <dt>FedEx shipment creation</dt>
                 <dd>
                   {carrierStatus.shipmentCreationEnabled
-                    ? 'Enabled for server administrators'
+                    ? 'Enabled for server sessions'
                     : 'Disabled'}
                 </dd>
               </div>
@@ -368,7 +368,7 @@ export default function AdminSettings() {
             <div className="workspace-panel-heading">
               <div>
                 <h2>Recently updated shipments</h2>
-                <p>The latest administrator changes to public shipment records.</p>
+                <p>The latest changes to public shipment records.</p>
               </div>
               <Package size={26} color="#4d148c" aria-hidden="true" />
             </div>
@@ -468,9 +468,9 @@ export default function AdminSettings() {
             <h2>Export workspace records</h2>
             <p>
               Download workspace profiles, address records, shipment plans, public shipments
-              (including timeline events, stage photos, and administrator-only internal notes),
+              (including timeline events, stage photos, and private internal notes),
               settings, and activity as JSON. Passphrase hashes, salts, session data, and upload keys
-              are never included. Treat the file as private administrator data.
+              are never included. Treat the file as private.
             </p>
             <button
               type="button"
@@ -523,10 +523,10 @@ export default function AdminSettings() {
               <dd>{carrierStatus.accountConfigured ? 'Configured privately' : 'Not configured'}</dd>
             </div>
             <div>
-              <dt>Official shipment creation</dt>
+              <dt>FedEx shipment creation</dt>
               <dd>
                 {carrierStatus.shipmentCreationEnabled
-                  ? 'Enabled for server administrators'
+                  ? 'Enabled for server sessions'
                   : 'Disabled'}
               </dd>
             </div>
@@ -558,7 +558,7 @@ export default function AdminSettings() {
             </li>
             <li>
               <code>FEDEX_CREATE_SHIPMENTS_ENABLED</code> — set to <code>true</code> only when
-              administrators should be able to submit official shipments
+              operators should be able to submit FedEx shipments
             </li>
           </ul>
           {carrierStatus.missing.length > 0 && (
@@ -568,8 +568,8 @@ export default function AdminSettings() {
           )}
           {mode !== 'server' && (
             <p className="workspace-feedback" role="status">
-              You are in browser-local mode. Official shipment creation requires server mode and
-              a verified server administrator session, so the form stays hidden here.
+              You are in browser-local mode. FedEx shipment creation requires server mode and
+              a verified server session, so the form stays hidden here.
             </p>
           )}
           <div className="workspace-form-actions">
@@ -588,7 +588,7 @@ export default function AdminSettings() {
               <p>
                 {mode === 'server'
                   ? 'Accounts are stored in the shared database and permissions are enforced on the server. These controls do not manage FedEx accounts.'
-                  : 'These profiles exist only in this browser. Administrator controls do not manage FedEx customer accounts.'}
+                  : 'These profiles exist only in this browser. These controls do not manage FedEx customer accounts.'}
               </p>
             </div>
             <Users size={28} color="#4d148c" aria-hidden="true" />
@@ -664,7 +664,7 @@ export default function AdminSettings() {
                             </span>
                           )}
                         </td>
-                        <td>{profile.role === 'admin' ? 'Administrator' : 'Member'}</td>
+                        <td>{profile.role === 'admin' ? 'Owner' : 'Member'}</td>
                         <td>
                           <span
                             className={`workspace-status ${profile.status === 'active' ? 'ready' : 'archived'}`}

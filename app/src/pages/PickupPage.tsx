@@ -24,7 +24,7 @@ function validatePlan(plan: PickupPlan): string {
   if (!isUSZip(plan.zip)) return 'Enter a valid U.S. pickup ZIP code.';
   const date = new Date(`${plan.date}T12:00:00`);
   if (!Number.isFinite(date.getTime()) || localDate(date) !== plan.date || plan.date < localDate()) return 'Choose today or a future pickup date.';
-  if (!Number.isInteger(Number(plan.count)) || Number(plan.count) < 1 || Number(plan.count) > 99) return 'For this sample, enter 1 to 99 packages.';
+  if (!Number.isInteger(Number(plan.count)) || Number(plan.count) < 1 || Number(plan.count) > 99) return 'Enter 1 to 99 packages.';
   if (!Number.isFinite(timeMinutes(plan.ready)) || !Number.isFinite(timeMinutes(plan.close)) || timeMinutes(plan.close) <= timeMinutes(plan.ready)) return 'The closing time must be later than the package ready time.';
   return '';
 }
@@ -61,7 +61,7 @@ export default function PickupPage() {
 
   return (
     <div className="service-page">
-      <ServiceHero eyebrow="Pickup planning" title="Schedule a pickup" description="Prepare your pickup details here, then finish your booking on the official FedEx website. Or find a convenient location to drop off your package." image={siteImages.professional}>
+      <ServiceHero eyebrow="Pickup planning" title="Schedule a pickup" description="Prepare your pickup details here, then finish your booking on fedex.com. Or find a convenient location to drop off your package." image={siteImages.professional}>
         <ExternalLink href="https://www.fedex.com/en-us/shipping/schedule-manage-pickups/login.html" className="brand-button brand-button-orange">Book on fedex.com</ExternalLink>
         <Link to="/locations" className="service-text-link">Find a drop-off location <ArrowRight size={16} aria-hidden="true" /></Link>
       </ServiceHero>
@@ -86,14 +86,14 @@ export default function PickupPage() {
             <div className="pickup-review" ref={reviewRef} tabIndex={-1} aria-labelledby="pickup-review-title">
               <h3 id="pickup-review-title"><CheckCircle2 size={23} color="#4d148c" aria-hidden="true" />Your plan is ready—not booked</h3>
               <dl><dt>Pickup area</dt><dd>{plan.zip}</dd><dt>Date</dt><dd>{plan.date}</dd><dt>Packages</dt><dd>{plan.count}</dd><dt>Local time window</dt><dd>{plan.ready}–{plan.close}</dd><dt>Service</dt><dd>{plan.service}</dd></dl>
-              <p>No reservation has been made. Open the official booking page and enter these details there to check availability, fees, and confirmation.</p>
+              <p>No reservation has been made. Open the booking page and enter these details there to check availability, fees, and confirmation.</p>
               <div className="service-actions"><ExternalLink href="https://www.fedex.com/en-us/shipping/schedule-manage-pickups/login.html" className="brand-button brand-button-orange">Continue to FedEx booking</ExternalLink></div>
             </div>
           )}
         </section>
         <section className="service-section service-form-two-column" aria-label="Pickup resources">
-          <div className="service-panel"><h2>Before you book</h2><ol className="list-decimal pl-5 space-y-4 text-sm leading-relaxed mt-5"><li>Create a shipping label and securely pack your shipment.</li><li>Check the pickup options and any fees for your location.</li><li>Keep your packages accessible during your confirmed pickup window.</li></ol><div className="service-actions"><Link to="/shipping/create" className="service-text-link">Try the sample label builder <ArrowRight size={16} aria-hidden="true" /></Link></div></div>
-          <div className="service-panel"><h2>Need a recurring pickup?</h2><p className="service-panel-intro mt-5">Explore automated, regularly scheduled, and on-call options on the official site. This sample only prepares a one-time pickup brief.</p><ExternalLink href="https://www.fedex.com/en-us/shipping/schedule-manage-pickups.html">View official pickup options</ExternalLink></div>
+          <div className="service-panel"><h2>Before you book</h2><ol className="list-decimal pl-5 space-y-4 text-sm leading-relaxed mt-5"><li>Create a shipping label and securely pack your shipment.</li><li>Check the pickup options and any fees for your location.</li><li>Keep your packages accessible during your confirmed pickup window.</li></ol><div className="service-actions"><Link to="/shipping/create" className="service-text-link">Try the label builder <ArrowRight size={16} aria-hidden="true" /></Link></div></div>
+          <div className="service-panel"><h2>Need a recurring pickup?</h2><p className="service-panel-intro mt-5">Explore automated, regularly scheduled, and on-call options on the FedEx site. This tool prepares a one-time pickup brief.</p><ExternalLink href="https://www.fedex.com/en-us/shipping/schedule-manage-pickups.html">View pickup options</ExternalLink></div>
         </section>
       </div>
     </div>

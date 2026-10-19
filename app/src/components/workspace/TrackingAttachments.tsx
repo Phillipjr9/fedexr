@@ -201,8 +201,8 @@ export default function TrackingAttachments() {
         title={server ? 'Server permissions enforced' : 'Server authorization required'}
       >
         {server
-          ? 'Your server administrator session authorizes image management. Select the account allowed to view an attachment, or keep it administrators-only. A tracking reference alone does not grant access.'
-          : 'Browser-local administrator access cannot authorize images. Operator-key access must be explicitly enabled on the server with a separate strong key. The key is sent in request headers only, never stored or placed in a URL, and cleared after a successful action.'}
+          ? 'Your server session authorizes image management. Select the account allowed to view an attachment, or keep it private. A tracking reference alone does not grant access.'
+          : 'Browser-local access cannot authorize images. Operator-key access must be explicitly enabled on the server with a separate strong key. The key is sent in request headers only, never stored or placed in a URL, and cleared after a successful action.'}
       </ServiceNotice>
       <form onSubmit={submit} noValidate className="mt-6">
         <fieldset disabled={busy} className="min-w-0 border-0 p-0 m-0">
@@ -248,7 +248,7 @@ export default function TrackingAttachments() {
                     setSuccess('');
                   }}
                 >
-                  <option value="">Administrators only</option>
+                  <option value="">Private</option>
                   {data.users.map((profile) => (
                     <option
                       key={profile.id}
@@ -265,7 +265,7 @@ export default function TrackingAttachments() {
                   ))}
                 </select>
                 <small>
-                  Only the selected account and administrators can read the image. Verification is
+                  Only the selected account can read the image. Verification is
                   still required. Loading a record restores its saved selection; changing it here
                   requires Update visibility or an upload.
                 </small>
@@ -285,7 +285,7 @@ export default function TrackingAttachments() {
                 <small>
                   Explicit ALLOW_LEGACY_IMAGE_KEY and separate ADMIN_SECRET configuration—not a
                   FedEx password, workspace passphrase, or account signing secret. Operator-key
-                  images remain administrators-only.
+                  images remain private.
                 </small>
               </div>
             )}
@@ -317,7 +317,7 @@ export default function TrackingAttachments() {
               <small>
                 Single-frame images, at most 16 megapixels and 8192 pixels per edge. The server
                 re-encodes images and removes metadata such as EXIF/GPS. Keep the original outside
-                this app for official claims.
+                this app for claims.
               </small>
             </div>
           </div>

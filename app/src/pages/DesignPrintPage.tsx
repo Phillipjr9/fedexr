@@ -78,7 +78,7 @@ export default function DesignPrintPage() {
     if (fileError) { fileRef.current?.focus(); return; }
     const text = [
       'PRINT PROJECT BRIEF',
-      'Independent preview — NOT a print order or price quote.',
+      'This brief is not a print order or a price quote.',
       '',
       `Product: ${product.name}`,
       `Desired quantity: ${amount}`,
@@ -88,8 +88,8 @@ export default function DesignPrintPage() {
       '',
       `Notes: ${notes.trim() || 'None'}`,
       '',
-      `Official product page: ${product.url}`,
-      'Confirm actual sizes, quantities, options, prices, and availability on the official site.',
+      `Product page: ${product.url}`,
+      'Confirm actual sizes, quantities, options, prices, and availability on the FedEx site.',
       'No file contents have been uploaded or transferred. Re-select your artwork on FedEx Office to place an order.',
     ].join('\n');
     const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
@@ -111,7 +111,7 @@ export default function DesignPrintPage() {
       </ServiceHero>
       <div className="site-container">
         <section className="service-section" aria-labelledby="print-products-title">
-          <div className="service-section-heading"><div><h2 id="print-products-title">Make something that stands out</h2><p>Choose a product to start your plan. Actual print options and pricing are confirmed on FedEx Office.</p></div><ExternalLink href="https://www.office.fedex.com/default/all-print-products.html">Browse all official print products</ExternalLink></div>
+          <div className="service-section-heading"><div><h2 id="print-products-title">Make something that stands out</h2><p>Choose a product to start your plan. Actual print options and pricing are confirmed on FedEx Office.</p></div><ExternalLink href="https://www.office.fedex.com/default/all-print-products.html">Browse all print products</ExternalLink></div>
           <div className="service-card-grid service-product-grid">
             {products.map((item) => <article key={item.id} className="service-card"><BrandImage image={item.image} className="service-card-image" /><div className="service-card-content"><h3>{item.name}</h3><p>{item.description}</p><button type="button" className="service-text-link" onClick={() => planProduct(item.id)} aria-label={`Plan ${item.name.toLowerCase()}`}>Plan this project <ArrowRight size={15} aria-hidden="true" /></button></div></article>)}
           </div>
@@ -120,7 +120,7 @@ export default function DesignPrintPage() {
         <section id="print-project" ref={plannerRef} className="service-section service-panel" aria-labelledby="print-plan-title">
           <h2 id="print-plan-title">Prepare your print project</h2>
           <p className="service-panel-intro">Create a downloadable text brief with your preferences and optional file information.</p>
-          <ServiceNotice>This planner stays in your browser tab. Files are not uploaded or sent to FedEx. A brief is not an order, artwork preview, or price quote. Use the official product page to check requirements, re-select your file, and place an order.</ServiceNotice>
+          <ServiceNotice>This planner stays in your browser tab. Files are not uploaded or sent to FedEx. A brief is not an order, artwork preview, or price quote. Use the product page to check requirements, re-select your file, and place an order.</ServiceNotice>
           <div className="print-planner mt-7">
             <form onSubmit={downloadBrief} noValidate>
               <div className="service-form-grid">
@@ -144,7 +144,7 @@ export default function DesignPrintPage() {
             <aside className="print-brief" aria-label="Print project summary">
               <h3>Your project at a glance</h3>
               <dl><dt>Product</dt><dd>{product.name}</dd><dt>Quantity</dt><dd>{quantity || 'Not specified'}</dd><dt>Color</dt><dd>{color}</dd><dt>Sides</dt><dd>{sides}</dd><dt>File</dt><dd>{file?.name || 'None selected'}</dd></dl>
-              <p>Ready to order? Open the official product page. Your file and preferences are not transferred automatically; enter them there to confirm production options and pricing.</p>
+              <p>Ready to order? Open the product page. Your file and preferences are not transferred automatically; enter them there to confirm production options and pricing.</p>
               <ExternalLink href={product.url} className="brand-button brand-button-orange">Continue at FedEx Office</ExternalLink>
               <div className="service-actions"><Link to="/support?topic=printing" className="service-text-link">Get printing help <ArrowRight size={16} aria-hidden="true" /></Link></div>
             </aside>

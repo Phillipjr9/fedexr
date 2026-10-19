@@ -130,10 +130,10 @@ export default function ProfilePanel() {
           {success}
         </p>
       )}
-      <ServiceNotice title="Access limitations">
+      <ServiceNotice title="Account security">
         {mode === 'server'
-          ? 'This independent account is protected by server-managed sessions and server-enforced record access. Never reuse your FedEx password or store payment card details here. Carrier services are not connected.'
-          : 'Browser-local access is not production authentication and can be changed by someone controlling this browser. Never reuse your FedEx password or store payment card details here. Live server permissions must be enforced separately.'}
+          ? 'Your account is protected by server-managed sessions and server-enforced record access. Never reuse your FedEx password or store payment card details here.'
+          : 'Browser-local access can be changed by someone controlling this browser. Never reuse your FedEx password or store payment card details here.'}
       </ServiceNotice>
     </div>
   );

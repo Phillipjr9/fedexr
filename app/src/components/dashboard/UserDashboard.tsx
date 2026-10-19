@@ -20,7 +20,7 @@ import PlanCollection from '@/components/workspace/PlanCollection';
 import ProfilePanel from '@/components/workspace/ProfilePanel';
 import { AddressEditor, ConfirmRemove } from '@/components/workspace/WorkspaceEditors';
 import BrandImage from '@/components/BrandImage';
-import { ExternalLink, ServiceNotice } from '@/components/ServiceLayout';
+import { ExternalLink } from '@/components/ServiceLayout';
 import { useWorkspace } from '@/context/workspace';
 import { downloadText } from '@/lib/localDownloads';
 import { siteImages } from '@/lib/siteAssets';
@@ -186,9 +186,9 @@ export default function UserDashboard() {
                       <Link
                         className="workspace-recent-tracking"
                         to={`/tracking${plan.reference ? `?number=${encodeURIComponent(plan.reference)}` : ''}`}
-                        aria-label={`View sample tracking for ${plan.recipient}`}
+                        aria-label={`View tracking for ${plan.recipient}`}
                       >
-                        Sample tracking <ArrowRight size={13} aria-hidden="true" />
+                        Track shipment <ArrowRight size={13} aria-hidden="true" />
                       </Link>
                     </div>
                     <span className={`workspace-status ${plan.status}`}>
@@ -211,13 +211,13 @@ export default function UserDashboard() {
             </Link>
             <Link to="/rate-calculator">
               <Settings size={23} aria-hidden="true" />
-              <strong>Compare sample rates</strong>
-              <span>Explore local price estimates.</span>
+              <strong>Compare rates</strong>
+              <span>Explore price estimates.</span>
             </Link>
             <Link to="/shipping/pickup">
               <MapPin size={23} aria-hidden="true" />
               <strong>Prepare a pickup</strong>
-              <span>Review details before official booking.</span>
+              <span>Review details before booking.</span>
             </Link>
           </div>
           <section className="workspace-feature">
@@ -226,10 +226,10 @@ export default function UserDashboard() {
               <h2>Your workspace, not your carrier account</h2>
               <p>
                 Local plans help organize your next steps. Real labels, billing, delivery
-                commitments, and FedEx Rewards stay on the official website.
+                commitments, and FedEx Rewards stay on fedex.com.
               </p>
               <ExternalLink href="https://www.fedex.com/en-us/home.html">
-                Visit official FedEx services
+                Visit FedEx services
               </ExternalLink>
             </div>
           </section>
@@ -427,7 +427,7 @@ export default function UserDashboard() {
       {active === 'services' && (
         <div className="workspace-stack">
           <section className="workspace-panel">
-            <h2>Connect with official carrier services</h2>
+            <h2>Connect with carrier services</h2>
             <p className="workspace-panel-intro">
               No payment cards, fabricated invoices, memberships, or rewards balances are stored in
               this workspace.
@@ -437,7 +437,7 @@ export default function UserDashboard() {
                 <h3>Account &amp; billing</h3>
                 <p>Use your actual FedEx account for billing, invoices, and carrier preferences.</p>
                 <ExternalLink href="https://www.fedex.com/secure-login/en-us/#/login-credentials">
-                  Open official account access
+                  Open account access
                 </ExternalLink>
               </div>
               <div>
@@ -446,14 +446,13 @@ export default function UserDashboard() {
                   Confirm current prices and create an actual shipping label on the carrier site.
                 </p>
                 <ExternalLink href="https://www.fedex.com/en-us/shipping/ship-manager/login.html">
-                  Open official shipping tools
+                  Open shipping tools
                 </ExternalLink>
               </div>
               <div>
                 <h3>Returns &amp; claims</h3>
                 <p>
-                  Prepare local notes here, then complete real return or claim actions through
-                  official resources.
+                  Prepare notes here, then complete return or claim actions on fedex.com.
                 </p>
                 <Link to="/returns" className="service-text-link">
                   Prepare return or claim notes <ArrowRight size={15} aria-hidden="true" />
@@ -461,10 +460,7 @@ export default function UserDashboard() {
               </div>
             </div>
           </section>
-          <ServiceNotice title="Independent workspace">
-            This project is not affiliated with FedEx. Workspace profiles, addresses, and plans do
-            not access or modify a live FedEx account.
-          </ServiceNotice>
+
         </div>
       )}
     </WorkspaceShell>

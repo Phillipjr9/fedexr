@@ -127,13 +127,13 @@ export default function ServerWorkspaceProvider({ children }: { children: ReactN
       );
     if (role === 'admin' && next.user.role !== 'admin') {
       await signOut();
-      throw new Error('This account does not have administrator access.');
+      throw new Error('This account does not have permission for that action.');
     }
     broadcast();
   }
   async function register(name: string, email: string, passphrase: string, owner = false) {
     if (owner)
-      throw new Error('Administrator roles must be assigned by a trusted server operator.');
+      throw new Error('Elevated roles must be assigned by a trusted server operator.');
     await accountRequest('/api/auth/sign-up/email', 'POST', {
       name: name.trim(),
       email: email.trim().toLowerCase(),

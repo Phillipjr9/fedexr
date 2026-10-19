@@ -37,7 +37,7 @@ export const supplyProducts = [
   },
   {
     id: 'rigid-mailers', name: 'Custom rigid mailers', category: 'mailers',
-    description: 'Explore bend-resistant kraft mailers for documents and flat products. Production options are confirmed by the official supplier.',
+    description: 'Explore bend-resistant kraft mailers for documents and flat products. Production options are confirmed by the supplier.',
     image: siteImages.customRigidMailers, imageFit: 'cover', unit: 'mailers', note: 'Custom packaging · confirm pricing online',
     keywords: 'flat document envelope paperboard rigid custom mailer',
     url: 'https://www.office.fedex.com/default/custom-rigid-mailers.html',
@@ -109,14 +109,14 @@ export function filterSupplies(query: string, category: SupplyCategory | 'all') 
 export function supplyListText(items: SupplySelection[]): string {
   return [
     'SUPPLY PLANNING LIST',
-    'Independent sample — NOT an order, price quote, or inventory reservation.',
+    'This list is not an order, price quote, or inventory reservation.',
     'Quantities are planning preferences, not actual supplier minimums or available stock.',
     '',
     ...items.flatMap((item) => {
       const product = supplyProducts.find((entry) => entry.id === item.id);
-      return product ? [`${product.name}: ${item.quantity} ${product.unit}`, `Official options: ${product.url}`, ''] : [];
+      return product ? [`${product.name}: ${item.quantity} ${product.unit}`, `Options: ${product.url}`, ''] : [];
     }),
-    'Check actual sizes, eligibility, order quantities, prices, and availability on the official websites.',
+    'Check actual sizes, eligibility, order quantities, prices, and availability on the supplier websites.',
     'This list is not transferred automatically. No payment or order has been processed.',
   ].join('\n');
 }

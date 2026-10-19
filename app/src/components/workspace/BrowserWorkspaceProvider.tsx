@@ -151,7 +151,7 @@ export default function BrowserWorkspaceProvider({ children }: { children: React
       throw new Error('This browser workspace has reached its profile limit.');
     if (owner && current.users.some((entry) => entry.role === 'admin'))
       throw new Error(
-        'An administrator already exists in this browser. Use administrator sign-in.',
+        'An owner already exists in this browser. Use owner sign-in.',
       );
     const normalizedEmail = email.trim().toLowerCase();
     if (current.users.some((entry) => entry.email === normalizedEmail))
@@ -168,7 +168,7 @@ export default function BrowserWorkspaceProvider({ children }: { children: React
           entry.email === normalizedEmail || (owner && entry.role === 'admin'),
       )
     )
-      throw new Error('That profile or administrator was created already. Sign in instead.');
+      throw new Error('That profile was created already. Sign in instead.');
     const profile: WorkspaceUser = {
       id: newId('profile'),
       name: name.trim(),
@@ -181,7 +181,7 @@ export default function BrowserWorkspaceProvider({ children }: { children: React
     publish(
       activity(
         { ...dataRef.current, users: [...dataRef.current.users, profile] },
-        owner ? 'Administrator workspace initialized' : 'Workspace profile created',
+        owner ? 'Management workspace initialized' : 'Workspace profile created',
         profile.id,
       ),
     );
@@ -735,7 +735,7 @@ export default function BrowserWorkspaceProvider({ children }: { children: React
     const current = dataRef.current;
     const profile = current.users.find((entry) => entry.id === id);
     if (!profile || profile.role === 'admin')
-      throw new Error('Administrator profiles cannot be suspended from this panel.');
+      throw new Error('Owner profiles cannot be suspended from this panel.');
     publish(
       activity(
         {

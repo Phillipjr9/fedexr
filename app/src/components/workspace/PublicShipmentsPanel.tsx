@@ -287,7 +287,7 @@ export default function PublicShipmentsPanel() {
             tabIndex={0}
           >
             <table className="workspace-table public-shipments-table">
-              <caption className="sr-only">Administrator-created public shipments</caption>
+              <caption className="sr-only">Public shipments</caption>
               <colgroup>
                 <col />
                 <col />

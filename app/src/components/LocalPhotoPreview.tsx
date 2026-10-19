@@ -13,7 +13,7 @@ export default function LocalPhotoPreview({ file }: { file: File }) {
   return (
     <div className="local-photo-preview">
       <img ref={ref} alt={`Local preview of ${file.name}`} width={240} height={160} className="local-photo-image" hidden={failed} onError={() => setFailed(true)} />
-      {failed && <p className="local-photo-unavailable">Preview unavailable. Keep the original file for the official submission.</p>}
+      {failed && <p className="local-photo-unavailable">Preview unavailable. Keep the original file for the submission.</p>}
     </div>
   );
 }

@@ -62,8 +62,8 @@ export function useTrackingAttachment({
           finish(
             null,
             server
-              ? 'Application attachments are private. Sign in to the account explicitly assigned to the image; a tracking reference alone does not grant access.'
-              : 'Application attachments are private. Browser-local profiles and tracking URLs do not grant server access. Administrators can use the attachment panel with explicitly enabled operator access.',
+              ? 'Attachments are private. Sign in to the account explicitly assigned to the image; a tracking reference alone does not grant access.'
+              : 'Attachments are private. Browser-local profiles and tracking URLs do not grant server access. The attachment panel can be used with explicitly enabled operator access.',
           );
         } else if (response.status === 404)
           finish(

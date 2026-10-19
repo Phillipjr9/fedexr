@@ -44,7 +44,7 @@ export default function WorkspaceShell({
           </Link>
           <span>
             <ShieldCheck size={15} aria-hidden="true" />
-            {admin ? 'Administrator workspace' : 'Personal workspace'} ·{' '}
+            {admin ? 'Management workspace' : 'Personal workspace'} ·{' '}
             {mode === 'server' ? 'Server-backed records' : 'Browser-local records'}
           </span>
         </div>
@@ -110,15 +110,15 @@ export default function WorkspaceShell({
             <div className="workspace-sidebar-note">
               <p>
                 {mode === 'server'
-                  ? 'Accounts and records belong to this application, not FedEx. Access is checked by the account server.'
-                  : 'Data is stored in this browser, not a FedEx account. Local access does not authorize server requests.'}
+                  ? 'Access is checked by the account server.'
+                  : 'Data is stored in this browser. Local access does not authorize server requests.'}
               </p>
               <a
                 href="https://www.fedex.com/secure-login/en-us/#/login-credentials"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Official FedEx account
+                FedEx account
                 <ArrowUpRight size={14} aria-hidden="true" />
                 <span className="sr-only"> (opens in a new tab)</span>
               </a>

@@ -78,7 +78,7 @@ export default function AccountRecovery() {
           <span aria-current="page">Account recovery</span>
         </nav>
         <section className="workspace-panel max-w-xl mx-auto">
-          <p className="service-eyebrow">Independent workspace account</p>
+          <p className="service-eyebrow">Workspace account</p>
           <h1 className="text-3xl font-light mb-5">
             {reset ? 'Choose a new workspace passphrase' : 'Recover workspace access'}
           </h1>

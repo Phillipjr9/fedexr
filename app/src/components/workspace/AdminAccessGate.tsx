@@ -75,14 +75,14 @@ export default function AdminAccessGate({ children }: { children: ReactNode }) {
         <nav className="service-breadcrumbs" aria-label="Breadcrumb">
           <Link to="/">Home</Link>
           <span aria-hidden="true">/</span>
-          <span aria-current="page">Administrator access</span>
+          <span aria-current="page">Restricted access</span>
         </nav>
         <div className="workspace-access-grid">
           <div className="workspace-access-form">
             <p className="service-eyebrow">Restricted access</p>
-            <h1>Administrator access key required</h1>
+            <h1>Access key required</h1>
             <p>
-              This area is restricted. Enter the administrator access key to continue.
+              This area is restricted. Enter the access key to continue.
             </p>
             <form onSubmit={submit} noValidate>
               <div className="service-field">
@@ -126,8 +126,8 @@ export default function AdminAccessGate({ children }: { children: ReactNode }) {
               </button>
             </form>
             <p className="workspace-access-limit" style={{ marginTop: '1.5rem' }}>
-              This gate protects the administrator area. It does not replace the administrator
-              passphrase used to sign in after access is granted.
+              This gate protects a restricted area. It does not replace the passphrase used to sign in
+              after access is granted.
             </p>
           </div>
           <aside className="workspace-access-aside" aria-label="Access information">
@@ -137,10 +137,10 @@ export default function AdminAccessGate({ children }: { children: ReactNode }) {
               priority
             />
             <div>
-              <h2>Protected administrator area</h2>
+              <h2>Protected area</h2>
               <p>
                 Only authorized operators should access this area. The access key is set by the
-                site owner and is separate from the administrator sign-in credentials.
+                site owner and is separate from your sign-in credentials.
               </p>
               <ul>
                 <li>

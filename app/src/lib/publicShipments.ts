@@ -157,7 +157,7 @@ export function latestShipmentEvent(shipment: PublicShipment) {
 }
 
 export interface DisplayShipmentEvent extends PublicShipmentEvent {
-  /** True when an administrator actually recorded this event; false for a route stage filled in for display. */
+  /** True when this event was actually recorded; false for a route stage filled in for display. */
   recorded: boolean;
 }
 
@@ -170,7 +170,7 @@ const routeStageOrder: PublicShipmentStatus[] = [
 ];
 
 /**
- * Public route view. Administrators can jump a shipment straight from
+ * Public route view. A shipment can be jumped straight from
  * In transit to Delivered, which leaves only two recorded events; a delivered
  * shipment should still show its complete route. Missing standard stages are
  * therefore filled in for display only, anchored to the delivery time and

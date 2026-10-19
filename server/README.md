@@ -59,7 +59,12 @@ Only after reviewing it, explicitly apply:
 npm run db:migrate
 ```
 
-The service **does not auto-migrate on startup**. Better Auth manages the prefixed identity/session/account/verification/rate-limit tables; the additional SQL adds:
+`npm run db:migrate` needs a shell, which hosted deployments do not provide, so there are two automatic paths for them:
+
+- **At build time** — `server/scripts/install-schema.js`, run last by the root `build` script. It installs the schema and brings the `ADMIN_EMAIL` account to its expected state before the deployment is promoted, then prints one `[install-schema] {…}` line to the build log with the outcome. It runs only for a production hosting build (or when `INSTALL_SCHEMA_AT_BUILD=true` is set), it probes before writing so a repeat build is a no-op, it is non-fatal so a database problem can never block a deployment, and it prints no connection strings or credential state. Run it directly with `npm run schema:install`.
+- **At request time** — `RUN_ACCOUNT_MIGRATIONS=true`, applied on a cold start by `src/auto-migrate.js` and awaited by `GET /api/account/health`, which reports the result as JSON. Off by default, because a request path should not alter the schema unasked.
+
+Both are idempotent and serialized behind the same advisory lock, so leaving both enabled is safe. Better Auth manages the prefixed identity/session/account/verification/rate-limit tables; the additional SQL adds:
 
 - `fedexr_addresses`
 - `fedexr_plans`

@@ -2,6 +2,22 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/api/auth/(.+)",
+      "destination": "/api/auth/[...path]"
+    },
+    {
+      "source": "/api/carrier/(.+)",
+      "destination": "/api/carrier/[...path]"
+    },
+    {
+      "source": "/api/tracking/(.+)",
+      "destination": "/api/tracking/[...path]"
+    },
+    {
+      "source": "/api/workspace/(.+)",
+      "destination": "/api/workspace/[...path]"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },

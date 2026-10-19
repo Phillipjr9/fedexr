@@ -68,39 +68,58 @@ function redact(text) {
  * is obvious in the log without needing the code open.
  */
 const TARGETS = [
+  // Flat functions. These have always routed; they are the control group that
+  // makes a catch-all failure obvious.
   {
     path: '/api/workspace',
-    limit: 600,
+    limit: 200,
+    routes: 'flat',
     expect: '401 JSON {"error":"Sign in to your workspace."} when signed out',
   },
   {
     path: '/api/account/health',
-    limit: 2600,
+    limit: 1400,
+    routes: 'flat',
     expect: '200 JSON readiness report',
   },
+  // Catch-all functions: api/auth, api/carrier, api/tracking, api/workspace
+  // each hold a single [...path].ts. Sign-in and tracking both live here, so
+  // these four are the ones that matter most.
   {
-    path: '/api/account/status',
-    limit: 300,
-    expect: 'JSON, never HTML',
+    path: '/api/auth/get-session',
+    limit: 200,
+    routes: 'catch-all',
+    expect: 'JSON from the auth handler, NOT index.html',
   },
   {
     path: '/api/carrier/status',
-    limit: 300,
+    limit: 260,
+    routes: 'catch-all',
     expect: '200 JSON with carrier.configured false',
   },
   {
     path: '/api/tracking/000000000000',
-    limit: 300,
+    limit: 200,
+    routes: 'catch-all',
     expect: '404 JSON for an unused tracking number',
   },
   {
-    path: '/api/definitely-not-a-route',
+    path: '/api/workspace/__probe__',
     limit: 200,
-    expect: 'JSON 404 from the API, NOT index.html',
+    routes: 'catch-all',
+    expect: 'JSON from the workspace handler, NOT index.html',
+  },
+  // Controls: nothing should answer these as JSON.
+  {
+    path: '/api/definitely-not-a-route',
+    limit: 120,
+    routes: 'none',
+    expect: 'index.html, because no function claims it',
   },
   {
     path: '/',
     limit: 0,
+    routes: 'static',
     expect: '200 HTML application shell',
   },
 ];
@@ -121,6 +140,7 @@ async function probe(origin, target) {
     const body = target.limit ? redact(text).trim().slice(0, target.limit) : undefined;
     return {
       path: target.path,
+      routes: target.routes,
       expect: target.expect,
       status: response.status,
       contentType,
@@ -135,6 +155,7 @@ async function probe(origin, target) {
   } catch (error) {
     return {
       path: target.path,
+      routes: target.routes,
       expect: target.expect,
       error: redact(error instanceof Error ? `${error.name}: ${error.message}` : String(error)).slice(0, 300),
       ms: Date.now() - started,

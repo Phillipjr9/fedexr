@@ -8,9 +8,10 @@
     "node": ">=22.13.0"
   },
   "scripts": {
+    "build": "node scripts/build-migration-sql.js --check && for f in src/*.js scripts/*.js; do node --check \"$f\" || exit 1; done",
+    "gen:migrations": "node scripts/build-migration-sql.js",
     "dev": "node --env-file-if-exists=../.env src/index.js",
     "start": "node --env-file-if-exists=../.env src/index.js",
-    "build": "for f in src/*.js scripts/*.js; do node --check \"$f\" || exit 1; done",
     "test": "node --test --test-concurrency=1 test/*.test.js",
     "db:plan": "node --env-file-if-exists=../.env scripts/migrate.js --plan",
     "db:migrate": "node --env-file-if-exists=../.env scripts/migrate.js --apply",

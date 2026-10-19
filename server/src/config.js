@@ -116,6 +116,13 @@ export function configuration(env = process.env) {
   if (adminPassword.length < 10 || adminPassword.length > 128)
     adminBootstrapMissing.push('ADMIN_PASSWORD (10–128 characters)');
   const adminBootstrapConfigured = adminBootstrapMissing.length === 0;
+  // Opt-in switch for applying the schema migration at start-up. Off by default:
+  // a request path should not alter the database schema unless an operator has
+  // explicitly asked for it. Every statement is CREATE ... IF NOT EXISTS and the
+  // run is serialized by an advisory lock, so re-running is harmless.
+  const runAccountMigrations = /^(1|true|yes|on)$/i.test(
+    String(env.RUN_ACCOUNT_MIGRATIONS || '').trim(),
+  );
   return {
     databaseURL,
     databaseConfigured,
@@ -130,6 +137,7 @@ export function configuration(env = process.env) {
     adminPassword,
     adminBootstrapConfigured,
     adminBootstrapMissing,
+    runAccountMigrations,
     port: Number(env.ACCOUNTS_PORT || 3001),
     production: env.NODE_ENV === 'production',
     missing,

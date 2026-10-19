@@ -3,6 +3,7 @@ import { configuration } from './config.js';
 import { smtpMailer } from './mail.js';
 import { createService } from './service.js';
 import { nodeHandler } from './http.js';
+import { runMigrationsOnce } from './auto-migrate.js';
 
 let runtime;
 export function getRuntime() {
@@ -19,9 +20,21 @@ export function getRuntime() {
   if (pool) pool.on('error', () => console.error('account_database_pool_error'));
   const mailer = smtpMailer(config);
   const service = createService({ config, pool, mailer });
-  // Provision the configured administrator in the background on cold start so
-  // ADMIN_EMAIL/ADMIN_PASSWORD work without shell access to the database.
-  void service.bootstrapAdmin();
+  // Both run in the background so neither adds latency to a request.
+  //
+  // The migration is opt-in (RUN_ACCOUNT_MIGRATIONS) and must finish before the
+  // administrator bootstrap: that bootstrap creates an account through the auth
+  // stack, which needs its tables to exist. Running it against an empty database
+  // is what previously took the whole function down.
+  if (config.runAccountMigrations && pool) {
+    void runMigrationsOnce({ pool, config })
+      .then(() => service.bootstrapAdmin())
+      .catch(() => console.error('account_startup_task_failed'));
+  } else {
+    // Provision the configured administrator so ADMIN_EMAIL/ADMIN_PASSWORD work
+    // without shell access to the database.
+    void service.bootstrapAdmin();
+  }
   runtime = {
     config,
     pool,

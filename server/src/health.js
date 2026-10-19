@@ -60,6 +60,8 @@ function emptyReport(config) {
       emailVerified: null,
       error: null,
     },
+    // Present only when RUN_ACCOUNT_MIGRATIONS is enabled and a migration ran.
+    migration: null,
     // Whether the heavy module graphs load at all. loadable:false here is the
     // direct cause of a 500 on every route that imports them.
     modules: {},
@@ -118,6 +120,20 @@ export async function buildReport({ config, pool = null, probeModules: shouldPro
       if (activePool) Object.assign(report.database, await probeSchema(activePool));
     } catch (error) {
       report.database.error = `${errorKind(error)}: ${describeError(error)}`;
+    }
+
+    // Opt-in only (RUN_ACCOUNT_MIGRATIONS). Awaited, then the schema is probed
+    // again, so a single visit reports the outcome instead of needing a second
+    // trip to discover whether it worked.
+    if (activePool && config.runAccountMigrations && !report.database.schemaInstalled) {
+      try {
+        const { runMigrationsOnce } = await import('./auto-migrate.js');
+        report.migration = await runMigrationsOnce({ pool: activePool, config });
+        if (report.migration.applied)
+          Object.assign(report.database, await probeSchema(activePool));
+      } catch (error) {
+        report.migration = { applied: false, error: `${errorKind(error)}: ${describeError(error)}` };
+      }
     }
 
     if (report.database.schemaInstalled && activePool) {

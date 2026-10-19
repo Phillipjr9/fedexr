@@ -1,8 +1,6 @@
-import { readFile } from 'node:fs/promises';
 import { MAX_IMAGE_BYTES } from './image-limits.js';
 import { normalizeImage, trackingReference, imageEvent } from './image-data.js';
-
-const sqlFile = new URL('../migrations/002-tracking-images.sql', import.meta.url);
+import { imageMigrationSQL } from './migration-sql.js';
 async function legacySource(client) {
   const present = await client.query("SELECT to_regclass('tracking_images') AS source");
   if (!present.rows[0].source) return null;
@@ -25,7 +23,7 @@ async function countLegacy(client, source) {
   );
 }
 export async function imageMigrationPlan(pool) {
-  const sql = await readFile(sqlFile, 'utf8');
+  const sql = imageMigrationSQL;
   const source = await legacySource(pool);
   const legacyRows = await countLegacy(pool, source);
   return {

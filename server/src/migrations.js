@@ -1,17 +1,7 @@
-import { readFile } from 'node:fs/promises';
 import { getMigrations } from 'better-auth/db/migration';
 import { authOptions } from './auth.js';
+import { accountMigrationSQL } from './migration-sql.js';
 
-const workspaceSQL = new URL('../migrations/001-workspace.sql', import.meta.url);
-const publicShipmentsSQL = new URL('../migrations/003-public-shipments.sql', import.meta.url);
-const publicShipmentOperationsSQL = new URL(
-  '../migrations/004-public-shipment-operations.sql',
-  import.meta.url,
-);
-const publicShipmentAutoProgressSQL = new URL(
-  '../migrations/005-public-shipment-auto-progress.sql',
-  import.meta.url,
-);
 export async function migrationPlan(pool, config) {
   const options = authOptions(pool, config, {
     send: async () => {
@@ -19,7 +9,7 @@ export async function migrationPlan(pool, config) {
     },
   });
   const auth = await getMigrations(options);
-  const sql = `${await readFile(workspaceSQL, 'utf8')}\n${await readFile(publicShipmentsSQL, 'utf8')}\n${await readFile(publicShipmentOperationsSQL, 'utf8')}\n${await readFile(publicShipmentAutoProgressSQL, 'utf8')}`;
+  const sql = accountMigrationSQL;
   return {
     auth,
     sql,

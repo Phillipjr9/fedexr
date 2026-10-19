@@ -44,6 +44,83 @@ function envInventory() {
   };
 }
 
+type HealthReport = {
+  database?: { schemaInstalled?: boolean };
+  adminBootstrap?: {
+    configured?: boolean;
+    accountExists?: boolean | null;
+    isAdmin?: boolean | null;
+    emailVerified?: boolean | null;
+    error?: string | null;
+  };
+  migration?: { applied?: boolean } | null;
+};
+
+type BootstrapOutcome = {
+  ready?: boolean;
+  reason?: string;
+  missing?: string[];
+};
+
+/** True only when every administrator field the report exposes is correct. */
+function adminIsCorrect(admin: HealthReport['adminBootstrap']) {
+  return admin?.accountExists === true && admin?.isAdmin === true && admin?.emailVerified === true;
+}
+
+/**
+ * Build the report, and once the schema is confirmed present, bring the
+ * administrator account to its expected state in the same request.
+ *
+ * The report itself is read-only: it says whether the administrator exists and
+ * is correct, but never creates one. Acting on it here means a single visit
+ * answers the whole question instead of three — one to install the schema, one
+ * to a runtime route to create the administrator, one to read the result back.
+ *
+ * Both imports stay dynamic, so a broken graph is reported rather than
+ * inherited, and service.bootstrapAdmin() memoizes its promise, so the
+ * cold-start chain getRuntime() fires and this awaited call share one attempt
+ * instead of racing.
+ */
+async function report(): Promise<HealthReport> {
+  const { healthReport } = await import('../../server/src/health.js');
+  const first: HealthReport = await healthReport();
+
+  // Without tables there is nothing to bootstrap against, and a correct
+  // administrator needs no work: leave the cheap read-only report as it is.
+  if (!first.database?.schemaInstalled) return first;
+  if (!first.adminBootstrap?.configured || adminIsCorrect(first.adminBootstrap)) return first;
+
+  try {
+    const { getRuntime } = await import('../../server/src/runtime.js');
+    const bootstrap: BootstrapOutcome = await getRuntime().service.bootstrapAdmin();
+    const second: HealthReport = await healthReport();
+    return {
+      ...second,
+      // Re-reading skips the migration because the schema is already installed,
+      // so carry the first pass's outcome forward instead of reporting null.
+      migration: second.migration ?? first.migration,
+      adminBootstrap: {
+        ...second.adminBootstrap,
+        // bootstrapAdmin() degrades to a reason rather than throwing; keep that
+        // visible whenever the account is still not correct afterwards.
+        error:
+          second.adminBootstrap?.error ??
+          (adminIsCorrect(second.adminBootstrap)
+            ? null
+            : (bootstrap?.reason ?? 'The administrator bootstrap did not finish.')),
+      },
+    };
+  } catch (error) {
+    return {
+      ...first,
+      adminBootstrap: {
+        ...first.adminBootstrap,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    };
+  }
+}
+
 /**
  * Read-only readiness report for GET /api/account/health.
  *
@@ -53,14 +130,15 @@ function envInventory() {
  * detail, so the one endpoint meant to explain failures must not be able to
  * inherit one. It always answers 200 with JSON.
  *
- * It also deliberately does not go through the shared runtime that every other
- * route uses: if that graph cannot load, this still reports why.
+ * It reaches the shared runtime that every other route uses only after the
+ * database schema is confirmed installed, and only inside try/catch: until then
+ * the runtime would fail for want of tables, and this endpoint's job is to say
+ * so rather than to inherit the failure.
  */
 export default async function handler(_req: unknown, res: NodeResponse) {
   let payload: unknown;
   try {
-    const mod = await import('../../server/src/health.js');
-    payload = await mod.healthReport();
+    payload = await report();
   } catch (error) {
     // Last resort. Still answer, still without exposing any secret value.
     payload = {

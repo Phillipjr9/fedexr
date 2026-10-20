@@ -102,33 +102,6 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.fx-tracking-disclosure {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 13px 0;
-  border-bottom: 1px solid #e9e9e9;
-  color: #595959;
-  font-size: 12px;
-  line-height: 1.55;
-}
-.fx-tracking-disclosure > svg {
-  color: var(--tracking-purple);
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-.fx-tracking-disclosure p {
-  margin: 0;
-}
-.fx-tracking-disclosure strong {
-  font-weight: 600;
-}
-.fx-tracking-disclosure > a {
-  font-size: 12px;
-  white-space: nowrap;
-  margin-left: auto;
-  padding-left: 12px;
-}
 .fx-tracking-entry {
   max-width: 880px;
   margin: 0 auto;
@@ -1208,21 +1181,6 @@
     font-size: 11px;
     max-width: 110px;
   }
-  .fx-tracking-disclosure {
-    flex-wrap: wrap;
-    gap: 7px;
-    padding-block: 12px;
-  }
-  .fx-tracking-disclosure p {
-    flex: 1;
-    min-width: 0;
-    font-size: 11px;
-  }
-  .fx-tracking-disclosure > a {
-    padding-left: 24px;
-    margin: 0;
-    font-size: 11px;
-  }
   .fx-tracking-entry {
     padding: 29px 0 37px;
   }
@@ -1488,12 +1446,6 @@
   }
   .fx-tracking-subnav {
     box-shadow: none;
-  }
-  .fx-tracking-disclosure {
-    color: #000;
-  }
-  .fx-tracking-disclosure > a {
-    display: none;
   }
   .fx-shipment-summary {
     gap: 25px;

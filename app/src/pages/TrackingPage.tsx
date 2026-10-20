@@ -449,9 +449,6 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
         </div>
       </header>
       <div className="fx-track-container">
-        <div className="fx-tracking-disclosure">
-          <p>Tracking details are recorded on this site.</p>
-        </div>
         {!submitted ? (
           <section className="fx-tracking-entry" aria-labelledby="tracking-entry-heading">
             <h2 id="tracking-entry-heading">

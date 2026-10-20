@@ -87,6 +87,11 @@ ALTER TABLE fedexr_public_shipments
   ADD COLUMN IF NOT EXISTS auto_progress_interval_minutes integer NOT NULL DEFAULT 5;
 ALTER TABLE fedexr_public_shipments
   ADD COLUMN IF NOT EXISTS auto_progress_next_at timestamptz;
+-- Exact delivery place for the tracking page map, entered by an administrator.
+-- The tracking page uses it only to position the map pin; additive and
+-- idempotent like every other migration in this series.
+ALTER TABLE fedexr_public_shipments
+  ADD COLUMN IF NOT EXISTS destination_street TEXT NOT NULL DEFAULT '';
 `;
 
 export const imageMigrationSQL = `-- A private replacement for the two incompatible historical tracking_images layouts.
@@ -132,5 +137,6 @@ export const migrationSourceFiles = {
   "trackingImages": "002-tracking-images.sql",
   "publicShipments": "003-public-shipments.sql",
   "publicShipmentOperations": "004-public-shipment-operations.sql",
-  "publicShipmentAutoProgress": "005-public-shipment-auto-progress.sql"
+  "publicShipmentAutoProgress": "005-public-shipment-auto-progress.sql",
+  "destinationStreet": "006-destination-street.sql"
 };

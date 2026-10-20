@@ -308,8 +308,16 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
           .find((event) => event.status === 'delivered')
           ?.location.trim() || ''
       : '';
+  const deliveryStreet = delivered && shipment ? shipment.destinationStreet.trim() : '';
+  const destinationPlace = shipment ? deliveryMapQuery(shipment) : '';
   const mapQuery =
-    deliveredLocation || (delivered && shipment ? deliveryMapQuery(shipment) : '');
+    !delivered || !shipment
+      ? ''
+      : deliveryStreet
+        ? destinationPlace
+          ? `${deliveryStreet}, ${destinationPlace}`
+          : deliveryStreet
+        : deliveredLocation || destinationPlace;
   const mapsKey = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '').trim();
   const mapEmbed = mapQuery ? deliveryMapEmbed(mapQuery, mapsKey) : '';
   const mapLink = mapQuery ? deliveryMapLink(mapQuery) : '';
@@ -631,7 +639,7 @@ function TrackingView({ focusOnMountRef }: { focusOnMountRef: RefObject<boolean>
                       referrerPolicy={mapReferrerPolicy}
                     />
                     <p className="fx-delivery-map-note">
-                      <span>The pin marks the place recorded with the delivered update.</span>
+                      <span>The pin marks the delivery place recorded on this shipment.</span>
                       <CarrierLink href={mapLink}>Open in Google Maps</CarrierLink>
                     </p>
                   </section>

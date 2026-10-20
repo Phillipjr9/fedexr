@@ -24,6 +24,7 @@ const files = {
   publicShipments: '003-public-shipments.sql',
   publicShipmentOperations: '004-public-shipment-operations.sql',
   publicShipmentAutoProgress: '005-public-shipment-auto-progress.sql',
+  destinationStreet: '006-destination-street.sql',
 };
 
 const checkOnly = process.argv.includes('--check');
@@ -54,6 +55,7 @@ const account = [
   sources.publicShipments,
   sources.publicShipmentOperations,
   sources.publicShipmentAutoProgress,
+  sources.destinationStreet,
 ].join('\n');
 
 const generated = `// GENERATED FILE — do not edit by hand.

@@ -80,6 +80,8 @@ export interface PublicShipment {
   destinationCity: string;
   destinationRegion: string;
   destinationPostalCode: string;
+  /** Optional delivery street, used only to position the tracking map pin. */
+  destinationStreet: string;
   service: SampleServiceId;
   weight: string;
   shipDate: string;
@@ -112,6 +114,7 @@ export type PublicShipmentInput = Pick<
   | 'destinationCity'
   | 'destinationRegion'
   | 'destinationPostalCode'
+  | 'destinationStreet'
   | 'service'
   | 'weight'
   | 'shipDate'
@@ -289,6 +292,10 @@ export function readWorkspace(): WorkspaceData {
             internalNote:
               typeof entry.internalNote === 'string' && entry.internalNote.length <= 1000
                 ? entry.internalNote
+                : '',
+            destinationStreet:
+              typeof entry.destinationStreet === 'string' && entry.destinationStreet.length <= 200
+                ? entry.destinationStreet
                 : '',
             archivedAt: typeof entry.archivedAt === 'string' ? entry.archivedAt : null,
             autoProgressEnabled: entry.autoProgressEnabled === true,

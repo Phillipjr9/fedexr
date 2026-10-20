@@ -153,6 +153,7 @@ export function PublicShipmentEditor({
           destinationCity: '',
           destinationRegion: '',
           destinationPostalCode: '',
+          destinationStreet: '',
           service: 'ground',
           weight: '',
           shipDate: localDate(),
@@ -421,6 +422,20 @@ export function PublicShipmentEditor({
                 maxLength={10}
                 required
               />
+            </div>
+            <div className="service-field">
+              <label htmlFor="shipment-destination-street">Delivery street (map pin)</label>
+              <input
+                id="shipment-destination-street"
+                value={input.destinationStreet}
+                onChange={(event) => set('destinationStreet', event.target.value)}
+                maxLength={200}
+                placeholder="House number and street, optional"
+              />
+              <small>
+                Places the tracking map pin at the delivery address. Leave blank to pin the
+                destination city and ZIP.
+              </small>
             </div>
             <div className="service-field">
               <label htmlFor="shipment-weight">Weight (lb, optional)</label>

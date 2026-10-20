@@ -60,6 +60,7 @@ function mapPublicShipment(row) {
     destinationCity: row.destination_city,
     destinationRegion: row.destination_region || '',
     destinationPostalCode: row.destination_postal_code,
+    destinationStreet: row.destination_street || '',
     service: row.service,
     weight: row.weight === null || row.weight === undefined ? '' : String(Number(row.weight)),
     shipDate: row.ship_date_text || String(row.ship_date).slice(0, 10),
@@ -607,8 +608,8 @@ export async function mutateWorkspace(pool, actor, method, pathname, body) {
           (id,tracking_number,owner_id,recipient_label,origin_city,origin_region,origin_postal_code,
            destination_city,destination_region,destination_postal_code,service,weight,ship_date,
            estimated_delivery,status,current_location,public_note,is_public,events,created_by,
-           auto_progress_enabled,auto_progress_interval_minutes,auto_progress_next_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19::jsonb,$20,$21,$22,$23)
+           auto_progress_enabled,auto_progress_interval_minutes,auto_progress_next_at,destination_street)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19::jsonb,$20,$21,$22,$23,$24)
          ON CONFLICT (id) DO UPDATE SET tracking_number=EXCLUDED.tracking_number,
            owner_id=EXCLUDED.owner_id,recipient_label=EXCLUDED.recipient_label,
            origin_city=EXCLUDED.origin_city,origin_region=EXCLUDED.origin_region,
@@ -622,7 +623,8 @@ export async function mutateWorkspace(pool, actor, method, pathname, body) {
            is_public=EXCLUDED.is_public,events=EXCLUDED.events,
            auto_progress_enabled=EXCLUDED.auto_progress_enabled,
            auto_progress_interval_minutes=EXCLUDED.auto_progress_interval_minutes,
-           auto_progress_next_at=EXCLUDED.auto_progress_next_at,updated_at=now()`,
+           auto_progress_next_at=EXCLUDED.auto_progress_next_at,
+           destination_street=EXCLUDED.destination_street,updated_at=now()`,
         [
           id,
           trackingNumber,
@@ -647,6 +649,7 @@ export async function mutateWorkspace(pool, actor, method, pathname, body) {
           input.autoProgressEnabled,
           input.autoProgressIntervalMinutes,
           autoProgressNextAt,
+          input.destinationStreet,
         ],
       );
       await activity(client, fresh, existing ? 'Public shipment updated' : 'Public shipment created');
@@ -857,8 +860,9 @@ export async function mutateWorkspace(pool, actor, method, pathname, body) {
         `INSERT INTO fedexr_public_shipments
           (id,tracking_number,owner_id,recipient_label,origin_city,origin_region,origin_postal_code,
            destination_city,destination_region,destination_postal_code,service,weight,ship_date,
-           estimated_delivery,status,current_location,public_note,internal_note,is_public,archived_at,events,created_by)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,NULL,$20::jsonb,$21)`,
+           estimated_delivery,status,current_location,public_note,internal_note,is_public,archived_at,events,created_by,
+           destination_street)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,NULL,$20::jsonb,$21,$22)`,
         [
           id,
           trackingNumber,
@@ -881,6 +885,7 @@ export async function mutateWorkspace(pool, actor, method, pathname, body) {
           existing.is_public,
           JSON.stringify(events),
           fresh.id,
+          existing.destination_street || '',
         ],
       );
       await activity(client, fresh, 'Public shipment duplicated');

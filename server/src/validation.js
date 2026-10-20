@@ -209,6 +209,7 @@ export function publicShipmentInput(body) {
   const destinationPostalCode = text(body.destinationPostalCode, 'Destination ZIP code', 10);
   assert(/^\d{5}(?:-\d{4})?$/.test(originPostalCode), 'Enter a valid origin ZIP code.');
   assert(/^\d{5}(?:-\d{4})?$/.test(destinationPostalCode), 'Enter a valid destination ZIP code.');
+  const destinationStreet = text(body.destinationStreet ?? '', 'Delivery street address', 200, false);
   assert(services.includes(body.service), 'Choose a valid shipping service.');
   const weightText =
     body.weight === undefined || body.weight === null ? '' : String(body.weight).trim();
@@ -240,6 +241,7 @@ export function publicShipmentInput(body) {
     destinationCity,
     destinationRegion,
     destinationPostalCode,
+    destinationStreet,
     service: body.service,
     weight,
     shipDate,

@@ -15,7 +15,14 @@ import {
 } from '@/lib/workspace';
 import { normalizeTrackingNumber } from '@/lib/publicShipments';
 
-type Snapshot = { user: WorkspaceUser; data: WorkspaceData; id?: string; notice?: string };
+type Snapshot = {
+  user: WorkspaceUser;
+  data: WorkspaceData;
+  id?: string;
+  notice?: string;
+  imported?: number;
+  skipped?: { trackingNumber: string; reason: string }[];
+};
 const channelName = 'fedexr:server-account-change';
 export default function ServerWorkspaceProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState(emptyWorkspace);
@@ -174,6 +181,13 @@ export default function ServerWorkspaceProvider({ children }: { children: ReactN
       throw new Error('The public shipment could not be read back. Refresh your workspace.');
     return record;
   }
+  async function importPublicShipments(shipments: PublicShipment[]) {
+    const next = await mutate('/shipments/import', 'POST', { shipments });
+    return {
+      imported: Number(next.imported) || 0,
+      skipped: Array.isArray(next.skipped) ? next.skipped : [],
+    };
+  }
   async function lookupPublicShipment(trackingNumber: string) {
     const normalized = normalizeTrackingNumber(trackingNumber);
     if (!normalized) return null;
@@ -207,6 +221,7 @@ export default function ServerWorkspaceProvider({ children }: { children: ReactN
     saveAddress,
     savePlan,
     savePublicShipment,
+    importPublicShipments,
     addPublicShipmentUpdate: async (id: string, input: PublicShipmentUpdateInput) => {
       await mutate(`/shipments/${encodeURIComponent(id)}/updates`, 'POST', input);
     },

@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Cloud,
   Download,
+  Upload,
   EyeOff,
   ImagePlus,
   KeyRound,
@@ -27,7 +28,7 @@ import { ServiceNotice } from '@/components/ServiceLayout';
 import { useWorkspace } from '@/context/workspace';
 import { holdReasonLabel, shipmentStatusLabel } from '@/lib/publicShipments';
 import { getCarrierStatus, unavailableCarrierStatus } from '@/lib/carrier';
-import { publicWorkspaceExport } from '@/lib/workspace';
+import { publicWorkspaceExport, type PublicShipment } from '@/lib/workspace';
 import { downloadText } from '@/lib/localDownloads';
 
 const sections: WorkspaceSection[] = [
@@ -49,7 +50,15 @@ const sections: WorkspaceSection[] = [
 ];
 
 export default function AdminSettings() {
-  const { data, user, saveSettings, setUserStatus, clearLegacyAccess, mode } = useWorkspace();
+  const {
+    data,
+    user,
+    saveSettings,
+    setUserStatus,
+    clearLegacyAccess,
+    mode,
+    importPublicShipments,
+  } = useWorkspace();
   const [params] = useSearchParams();
   const active = sections.some((section) => section.id === params.get('tab'))
     ? params.get('tab')!
@@ -59,6 +68,7 @@ export default function AdminSettings() {
   const [name, setName] = useState(data.settings.name);
   const [announcement, setAnnouncement] = useState(data.settings.announcements);
   const [message, setMessage] = useState('');
+  const [importing, setImporting] = useState(false);
   const [error, setError] = useState('');
   const [showAllActivity, setShowAllActivity] = useState(false);
   const [expandedProfileId, setExpandedProfileId] = useState('');
@@ -109,6 +119,32 @@ export default function AdminSettings() {
     setMessage(
       'Workspace records were exported. Passphrase hashes, salts, session data, and upload keys are excluded.',
     );
+  }
+  async function importRecords(file: File) {
+    setError('');
+    setMessage('');
+    setImporting(true);
+    try {
+      const parsed: unknown = JSON.parse(await file.text());
+      const shipments = Array.isArray((parsed as { shipments?: unknown }).shipments)
+        ? ((parsed as { shipments: PublicShipment[] }).shipments)
+        : [];
+      if (!shipments.length)
+        throw new Error('That file contains no shipments array to import.');
+      const result = await importPublicShipments(shipments);
+      setMessage(
+        `Imported ${result.imported} shipment${result.imported === 1 ? '' : 's'}` +
+          (result.skipped.length
+            ? `; skipped ${result.skipped.length} duplicate${result.skipped.length === 1 ? '' : 's'}: ` +
+              result.skipped.map((entry) => entry.trackingNumber).join(', ')
+            : '') +
+          '.',
+      );
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'The file could not be imported.');
+    } finally {
+      setImporting(false);
+    }
   }
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -480,6 +516,34 @@ export default function AdminSettings() {
               <Download size={17} aria-hidden="true" />
               Export workspace data
             </button>
+            {mode === 'server' && (
+              <>
+                <label
+                  htmlFor="workspace-import-file"
+                  className="brand-button brand-button-outline"
+                >
+                  <Upload size={17} aria-hidden="true" />
+                  {importing ? 'Importing…' : 'Import shipment records'}
+                </label>
+                <input
+                  id="workspace-import-file"
+                  className="sr-only"
+                  type="file"
+                  accept="application/json,.json"
+                  disabled={importing}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = '';
+                    if (file) void importRecords(file);
+                  }}
+                />
+                <p>
+                  Accepts a workspace export file from a browser-local workspace. Timeline
+                  events and stage photos come across; tracking numbers already in the
+                  database are skipped.
+                </p>
+              </>
+            )}
             {message && (
               <p className="workspace-feedback" role="status">
                 {message}

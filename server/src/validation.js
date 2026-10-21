@@ -276,3 +276,111 @@ export function booleanInput(value, label) {
   assert(typeof value === 'boolean', `Choose a valid ${label.toLowerCase()} setting.`);
   return value;
 }
+
+export function publicShipmentImportInput(body) {
+  assert(
+    Array.isArray(body.shipments),
+    'Send an export file that contains a shipments array.',
+  );
+  assert(body.shipments.length <= 200, 'Import at most 200 shipments at a time.');
+  return body.shipments.map((entry, index) => importedShipment(entry, index));
+}
+
+function importedShipment(entry, index) {
+  const label = `Shipment ${index + 1}`;
+  assert(entry && typeof entry === 'object' && !Array.isArray(entry), `${label}: send an object.`);
+  const entered = text(entry.trackingNumber, `${label} tracking number`, 40)
+    .toUpperCase()
+    .replace(/\s+/g, ' ');
+  const compact = entered.replace(/[\s-]+/g, '');
+  const trackingNumber =
+    /^\d{12}$/.test(compact) || /^\d{15}$/.test(compact) ? compact : entered;
+  assert(
+    /^[A-Z0-9][A-Z0-9 -]{3,39}$/.test(trackingNumber),
+    `${label}: use a tracking number from 4-40 characters with letters, numbers, spaces, or hyphens.`,
+  );
+  assert(
+    !/^\d+$/.test(compact) || compact.length === 12 || compact.length === 15,
+    `${label}: for a FedEx-style tracking number, use 15 digits for Ground or 12 digits for Express-style services.`,
+  );
+  const originPostalCode = text(entry.originPostalCode, `${label} origin ZIP code`, 10);
+  const destinationPostalCode = text(entry.destinationPostalCode, `${label} destination ZIP code`, 10);
+  assert(/^\d{5}(?:-\d{4})?$/.test(originPostalCode), `${label}: enter a valid origin ZIP code.`);
+  assert(
+    /^\d{5}(?:-\d{4})?$/.test(destinationPostalCode),
+    `${label}: enter a valid destination ZIP code.`,
+  );
+  assert(services.includes(entry.service), `${label}: choose a valid shipping service.`);
+  const weightText =
+    entry.weight === undefined || entry.weight === null ? '' : String(entry.weight).trim();
+  const weight = weightText === '' ? null : Number(weightText);
+  assert(
+    weight === null || (Number.isFinite(weight) && weight >= 0.1 && weight <= 150),
+    `${label}: enter a package weight from 0.1-150 lb, or leave it blank.`,
+  );
+  const shipDate = validDate(entry.shipDate, `${label} ship date`);
+  const estimatedDelivery =
+    validDate(entry.estimatedDelivery ?? '', `${label} estimated delivery`, false) || null;
+  assert(
+    !estimatedDelivery || estimatedDelivery >= shipDate,
+    `${label}: estimated delivery cannot be before the ship date.`,
+  );
+  assert(publicShipmentStatuses.includes(entry.status), `${label}: choose a valid shipment status.`);
+  const events = Array.isArray(entry.events) ? entry.events : [];
+  assert(events.length <= 100, `${label}: keep at most 100 timeline events.`);
+  return {
+    trackingNumber,
+    recipientLabel: text(entry.recipientLabel, `${label} recipient / shipment label`, 100),
+    originCity: text(entry.originCity, `${label} origin city`, 80),
+    originRegion: text(entry.originRegion ?? '', `${label} origin state / region`, 40, false),
+    originPostalCode,
+    destinationCity: text(entry.destinationCity, `${label} destination city`, 80),
+    destinationRegion: text(entry.destinationRegion ?? '', `${label} destination state / region`, 40, false),
+    destinationPostalCode,
+    destinationStreet: text(entry.destinationStreet ?? '', `${label} delivery street address`, 200, false),
+    service: entry.service,
+    weight,
+    shipDate,
+    estimatedDelivery,
+    status: entry.status,
+    currentLocation: text(entry.currentLocation, `${label} current location`, 120),
+    publicNote: text(entry.publicNote ?? '', `${label} public note`, 500, false),
+    internalNote: text(entry.internalNote ?? '', `${label} internal note`, 1000, false),
+    holdReason: text(entry.holdReason ?? '', `${label} hold issue`, 80, false),
+    isPublic: entry.isPublic === undefined ? true : entry.isPublic === true,
+    archivedAt:
+      typeof entry.archivedAt === 'string' && entry.archivedAt.length <= 40
+        ? entry.archivedAt
+        : null,
+    autoProgressEnabled: entry.autoProgressEnabled === true && entry.status !== 'delivered',
+    autoProgressIntervalMinutes:
+      typeof entry.autoProgressIntervalMinutes === 'number' &&
+      Number.isFinite(entry.autoProgressIntervalMinutes)
+        ? Math.min(1440, Math.max(1, Math.round(entry.autoProgressIntervalMinutes)))
+        : 5,
+    autoProgressNextAt:
+      typeof entry.autoProgressNextAt === 'string' && entry.autoProgressNextAt.length <= 40
+        ? entry.autoProgressNextAt
+        : '',
+    events: events.map((event, eventIndex) => importedEvent(event, `${label} event ${eventIndex + 1}`)),
+  };
+}
+
+function importedEvent(event, label) {
+  assert(event && typeof event === 'object' && !Array.isArray(event), `${label}: send an object.`);
+  assert(publicShipmentStatuses.includes(event.status), `${label}: choose a valid shipment status.`);
+  const photo =
+    typeof event.photo === 'string' &&
+    /^data:image\/(jpeg|png|webp);base64,/.test(event.photo) &&
+    event.photo.length <= 400_000
+      ? event.photo
+      : '';
+  return {
+    status: event.status,
+    location: text(event.location, `${label} location`, 120),
+    note: text(event.note ?? '', `${label} note`, 500, false),
+    holdReason: text(event.holdReason ?? '', `${label} hold issue`, 80, false),
+    photo,
+    at: text(event.at, `${label} time`, 40),
+  };
+}

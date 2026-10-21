@@ -366,6 +366,12 @@ export default function BrowserWorkspaceProvider({ children }: { children: React
         .find((event) => event.note.trim())?.note || ''
     );
   }
+  function importPublicShipments(): {
+    imported: number;
+    skipped: { trackingNumber: string; reason: string }[];
+  } {
+    throw new Error('Importing shipment records needs the shared database workspace.');
+  }
   function savePublicShipment(input: PublicShipmentInput, id?: string) {
     const admin = requireUser(true);
     const error = publicShipmentError(input);
@@ -786,6 +792,7 @@ export default function BrowserWorkspaceProvider({ children }: { children: React
     updatePlanStatus,
     removePlan,
     savePublicShipment,
+    importPublicShipments,
     addPublicShipmentUpdate,
     updatePublicShipmentEvent,
     removePublicShipmentEvent,

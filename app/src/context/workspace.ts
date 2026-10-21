@@ -34,6 +34,9 @@ export interface WorkspaceContextValue {
   updatePlanStatus: (id: string, status: ShipmentPlan['status']) => Result;
   removePlan: (id: string) => Result;
   savePublicShipment: (input: PublicShipmentInput, id?: string) => Result<PublicShipment>;
+  importPublicShipments: (
+    shipments: PublicShipment[],
+  ) => Result<{ imported: number; skipped: { trackingNumber: string; reason: string }[] }>;
   addPublicShipmentUpdate: (id: string, input: PublicShipmentUpdateInput) => Result;
   updatePublicShipmentEvent: (
     id: string,

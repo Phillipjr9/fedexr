@@ -1186,3 +1186,99 @@ test('profile edits persist the name but email changes require confirmation of t
   assert.equal(messages.at(-1).to, 'member@example.test');
   assert.ok(messages.at(-1).subject.includes('Confirm'));
 });
+
+test('administrators can import exported shipment records exactly once', async () => {
+  const admin = await owner();
+  const member = await user();
+  const record = (number, extra = {}) => ({
+    trackingNumber: number,
+    recipientLabel: 'Imported Recipient',
+    originCity: 'Memphis',
+    originRegion: 'TN',
+    originPostalCode: '38118',
+    destinationCity: 'Beverly Hills',
+    destinationRegion: 'CA',
+    destinationPostalCode: '90210',
+    destinationStreet: '450 N Rodeo Dr',
+    service: '2day',
+    weight: '4.5',
+    shipDate: '2026-04-01',
+    estimatedDelivery: '2026-04-03',
+    status: 'delivered',
+    currentLocation: 'BEVERLY HILLS, CA',
+    publicNote: '',
+    internalNote: 'From the browser-local era.',
+    isPublic: true,
+    archivedAt: null,
+    autoProgressEnabled: false,
+    autoProgressIntervalMinutes: 5,
+    autoProgressNextAt: '',
+    events: [
+      {
+        status: 'label_created',
+        location: 'Memphis, TN',
+        note: 'Shipping label created',
+        holdReason: '',
+        photo: '',
+        at: '2026-04-01T09:00:00.000Z',
+      },
+      {
+        status: 'delivered',
+        location: 'Beverly Hills, CA 90210',
+        note: 'Delivered, left at front door',
+        holdReason: '',
+        photo: 'data:image/jpeg;base64,AAAA',
+        at: '2026-04-03T11:00:00.000Z',
+      },
+    ],
+    ...extra,
+  });
+  const payload = {
+    shipments: [
+      record('770000000001'),
+      record('770000000002', {
+        destinationStreet: '',
+        status: 'in_transit',
+        events: [
+          {
+            status: 'picked_up',
+            location: 'Memphis, TN',
+            note: 'Picked up',
+            holdReason: '',
+            photo: '',
+            at: '2026-04-01T17:00:00.000Z',
+          },
+        ],
+      }),
+    ],
+  };
+
+  assert.equal(
+    (await request('/api/workspace/shipments/import', 'POST', payload, member.cookie)).status,
+    403,
+  );
+  const first = await json(
+    await request('/api/workspace/shipments/import', 'POST', payload, admin.cookie),
+  );
+  assert.equal(first.status, 200, JSON.stringify(first.body));
+  assert.equal(first.body.imported, 2);
+  assert.equal(first.body.skipped.length, 0);
+  const imported = first.body.data.shipments.find(
+    (entry) => entry.trackingNumber === '770000000001',
+  );
+  assert.equal(imported.destinationStreet, '450 N Rodeo Dr');
+  assert.equal(imported.events.length, 2);
+  assert.ok(imported.events[1].photo.startsWith('data:image/jpeg;base64,'));
+
+  const second = await json(
+    await request('/api/workspace/shipments/import', 'POST', payload, admin.cookie),
+  );
+  assert.equal(second.status, 200, JSON.stringify(second.body));
+  assert.equal(second.body.imported, 0);
+  assert.equal(second.body.skipped.length, 2);
+
+  const track = await json(await request('/api/tracking/770000000001', 'GET'));
+  assert.equal(track.status, 200, JSON.stringify(track.body));
+  assert.equal(track.body.shipment.destinationStreet, '450 N Rodeo Dr');
+  assert.equal(track.body.shipment.events.length, 2);
+});

@@ -9,6 +9,7 @@ import {
   planInput,
   statusInput,
   publicShipmentInput,
+  publicShipmentImportInput,
   publicShipmentUpdateInput,
   internalNoteInput,
   booleanInput,
@@ -654,6 +655,77 @@ export async function mutateWorkspace(pool, actor, method, pathname, body) {
       );
       await activity(client, fresh, existing ? 'Public shipment updated' : 'Public shipment created');
       return { id };
+    }
+    if (pathname === '/shipments/import' && method === 'POST') {
+      requireAdmin(fresh);
+      const items = publicShipmentImportInput(body);
+      const total = await client.query('SELECT count(*) AS total FROM fedexr_public_shipments');
+      assert(
+        Number(total.rows[0].total) + items.length <= 500,
+        'Keep at most 500 public shipments. Import fewer records at a time.',
+      );
+      const skipped = [];
+      let imported = 0;
+      for (const item of items) {
+        const duplicate = await client.query(
+          'SELECT id FROM fedexr_public_shipments WHERE tracking_number = $1',
+          [item.trackingNumber],
+        );
+        if (duplicate.rows.length) {
+          skipped.push({
+            trackingNumber: item.trackingNumber,
+            reason: 'A shipment already uses this tracking number.',
+          });
+          continue;
+        }
+        const autoProgressNextAt = item.autoProgressEnabled
+          ? new Date(Date.now() + item.autoProgressIntervalMinutes * 60_000).toISOString()
+          : null;
+        await client.query(
+          `INSERT INTO fedexr_public_shipments
+            (id,tracking_number,owner_id,recipient_label,origin_city,origin_region,origin_postal_code,
+             destination_city,destination_region,destination_postal_code,destination_street,service,weight,ship_date,
+             estimated_delivery,status,current_location,public_note,internal_note,is_public,archived_at,events,created_by,
+             auto_progress_enabled,auto_progress_interval_minutes,auto_progress_next_at)
+           VALUES ($1,$2,NULL,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21::jsonb,$22,$23,$24,$25)`,
+          [
+            randomUUID(),
+            item.trackingNumber,
+            item.recipientLabel,
+            item.originCity,
+            item.originRegion,
+            item.originPostalCode,
+            item.destinationCity,
+            item.destinationRegion,
+            item.destinationPostalCode,
+            item.destinationStreet,
+            item.service,
+            item.weight,
+            item.shipDate,
+            item.estimatedDelivery,
+            item.status,
+            item.currentLocation,
+            item.publicNote,
+            item.internalNote,
+            item.isPublic,
+            item.archivedAt,
+            JSON.stringify(item.events),
+            fresh.id,
+            item.autoProgressEnabled,
+            item.autoProgressIntervalMinutes,
+            autoProgressNextAt,
+          ],
+        );
+        imported += 1;
+      }
+      await activity(
+        client,
+        fresh,
+        imported
+          ? `Imported ${imported} public shipment${imported === 1 ? '' : 's'}`
+          : 'Public shipment import skipped duplicates',
+      );
+      return { imported, skipped };
     }
     const shipmentMatch = pathname.match(/^\/shipments\/([a-f0-9-]{36})(\/updates)?$/);
     if (shipmentMatch && method === 'DELETE' && !shipmentMatch[2]) {
